@@ -1,32 +1,25 @@
 package org.productivity_buddy.view;
 
-import javafx.beans.property.SimpleStringProperty;
-import javafx.beans.value.ObservableValue;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.*;
-import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.*;
-import javafx.util.Callback;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.VBox;
 
 import org.productivity_buddy.ProcessCategory;
 import org.productivity_buddy.ProcessInfo;
 import org.productivity_buddy.ProcessRegistry;
 import org.productivity_buddy.ProductivityBuddy;
 
-public class ProcessDetailView implements RefreshableView {
+public class ProcessDetailView implements RefreshablePanel {
 
     private final ProcessRegistry registry;
     private final ProductivityBuddy app;
     private final String processName;
 
-    // live-update polja
-    private TableView<ProcessInfo> table;
     private Label lblTime;
     private Label lblRamLabel;
     private Label lblRamRank;
@@ -39,56 +32,9 @@ public class ProcessDetailView implements RefreshableView {
         this.processName = processName;
     }
 
-    public Node createView() {
-        HBox mainLayout = new HBox(24);
-        mainLayout.setPadding(new Insets(24));
-
+    public Node createRightPanel() {
         ProcessInfo procInfo = registry.get(processName);
 
-        // ===== LEVA STRANA: Tabela procesa =====
-        VBox leftPane = new VBox(12);
-        HBox.setHgrow(leftPane, Priority.ALWAYS);
-
-        Label tableTitle = new Label("Active Processes");
-        tableTitle.getStyleClass().add("section-title");
-
-        table = new TableView<>();
-
-        TableColumn<ProcessInfo, String> colName = new TableColumn<>("Process");
-        colName.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<ProcessInfo, String>, ObservableValue<String>>() {
-            @Override
-            public ObservableValue<String> call(TableColumn.CellDataFeatures<ProcessInfo, String> data) {
-                return new SimpleStringProperty(data.getValue().getAliasName());
-            }
-        });
-
-        TableColumn<ProcessInfo, String> colCategory = new TableColumn<>("Category");
-        colCategory.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<ProcessInfo, String>, ObservableValue<String>>() {
-            @Override
-            public ObservableValue<String> call(TableColumn.CellDataFeatures<ProcessInfo, String> data) {
-                return new SimpleStringProperty(data.getValue().getCategory());
-            }
-        });
-        table.getColumns().addAll(colName, colCategory);
-        table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_ALL_COLUMNS);
-        VBox.setVgrow(table, Priority.ALWAYS);
-        applyUncategorizedLastSortPolicy(table);
-
-        table.setItems(FXCollections.observableArrayList(registry.getAll()));
-
-        table.setOnMouseClicked(new EventHandler<MouseEvent>() {
-            @Override
-            public void handle(MouseEvent event) {
-                if (event.getClickCount() == 1 && table.getSelectionModel().getSelectedItem() != null) {
-                    String selected = table.getSelectionModel().getSelectedItem().getOriginalName();
-                    app.navigateToProcessDetail(selected);
-                }
-            }
-        });
-
-        leftPane.getChildren().addAll(tableTitle, table);
-
-        // ===== DESNA STRANA: Detalji procesa =====
         VBox rightPane = new VBox(20);
         rightPane.setPrefWidth(420);
         rightPane.setAlignment(Pos.TOP_LEFT);
@@ -109,7 +55,6 @@ public class ProcessDetailView implements RefreshableView {
         lblTime = new Label();
         lblTime.getStyleClass().add("time-label");
 
-        // Stats grid 2x2
         GridPane statsGrid = new GridPane();
         statsGrid.setHgap(12);
         statsGrid.setVgap(12);
@@ -136,7 +81,6 @@ public class ProcessDetailView implements RefreshableView {
         statsGrid.add(lblCpuLabel, 0, 1);
         statsGrid.add(lblCpuRank, 1, 1);
 
-        // Kontrole 2x2
         GridPane controlsGrid = new GridPane();
         controlsGrid.setHgap(14);
         controlsGrid.setVgap(14);
@@ -227,19 +171,16 @@ public class ProcessDetailView implements RefreshableView {
         controlsGrid.add(btnCategory, 1, 1);
 
         rightPane.getChildren().addAll(btnBack, lblTitle, lblTime, statsGrid, controlsGrid);
-        mainLayout.getChildren().addAll(leftPane, rightPane);
 
-        // prvi refresh da popuni vrednosti
         refreshUI();
 
-        return mainLayout;
+        return rightPane;
     }
 
     @Override
     public void refreshUI() {
         ProcessInfo procInfo = registry.get(processName);
 
-        // azuriraj stats labele
         if (procInfo != null) {
             lblTime.setText("Total time - " + ProductivityBuddy.formatTime(procInfo.getEffectiveTotalTime()));
             lblRamLabel.setText("RAM usage " + ProductivityBuddy.formatRam(procInfo.getRamUsageBytes()));
@@ -262,22 +203,6 @@ public class ProcessDetailView implements RefreshableView {
             lblCpuLabel.setText("CPU usage N/A");
             lblRamRank.setText("");
             lblCpuRank.setText("");
-        }
-
-        // refresh tabele
-        if (table != null) {
-            retainSortOrder(table, new Runnable() {
-                @Override
-                public void run() {
-                    ObservableList<ProcessInfo> currentItems = table.getItems();
-                    java.util.Collection<ProcessInfo> registryItems = registry.getAll();
-                    if (currentItems.size() != registryItems.size()) {
-                        table.setItems(FXCollections.observableArrayList(registryItems));
-                    } else {
-                        table.refresh();
-                    }
-                }
-            });
         }
     }
 }
