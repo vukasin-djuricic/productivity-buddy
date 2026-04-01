@@ -14,6 +14,7 @@ import javafx.stage.WindowEvent;
 
 import org.productivity_buddy.view.MainChartView;
 import org.productivity_buddy.view.ProcessDetailView;
+import org.productivity_buddy.view.RefreshableView;
 import org.productivity_buddy.view.SpecificCategoryView;
 import org.productivity_buddy.workers.AnalyticsWorker;
 import org.productivity_buddy.workers.FileWatcherWorker;
@@ -40,8 +41,8 @@ public class ProductivityBuddy extends Application {
     private Thread watcherThread;
     private ScheduledExecutorService snapshotScheduler;
 
-    // view-ovi
-    private MainChartView mainChartView;
+    // aktivan view — polimorfizam za refresh
+    private RefreshableView activeView;
 
     @Override
     public void start(Stage primaryStage) {
@@ -100,14 +101,11 @@ public class ProductivityBuddy extends Application {
         watcherThread.setDaemon(true);
         watcherThread.start();
 
-        // 8. Kreiraj view-ove
-        mainChartView = new MainChartView(registry, analyticsWorker, this);
-
-        // 9. UI setup
+        // 8. UI setup
         rootPane = new BorderPane();
         rootPane.getStyleClass().add("root-pane");
         rootPane.setTop(createGlobalTopBar());
-        rootPane.setCenter(mainChartView.createView());
+        navigateToMain();
 
         Scene scene = new Scene(rootPane, 1100, 750);
         try {
@@ -137,18 +135,21 @@ public class ProductivityBuddy extends Application {
     // NAVIGACIJA — pozivaju view klase
     // ==========================================
     public void navigateToMain() {
-        mainChartView = new MainChartView(registry, analyticsWorker, this);
-        rootPane.setCenter(mainChartView.createView());
+        MainChartView view = new MainChartView(registry, analyticsWorker, this);
+        rootPane.setCenter(view.createView());
+        activeView = view;
     }
 
     public void navigateToProcessDetail(String processName) {
-        ProcessDetailView detailView = new ProcessDetailView(registry, this);
-        rootPane.setCenter(detailView.createView(processName));
+        ProcessDetailView view = new ProcessDetailView(registry, this, processName);
+        rootPane.setCenter(view.createView());
+        activeView = view;
     }
 
     public void navigateToCategory(String categoryName) {
-        SpecificCategoryView categoryView = new SpecificCategoryView(registry, analyticsWorker, this);
-        rootPane.setCenter(categoryView.createView(categoryName));
+        SpecificCategoryView view = new SpecificCategoryView(registry, analyticsWorker, this, categoryName);
+        rootPane.setCenter(view.createView());
+        activeView = view;
     }
 
     private void performShutdown() {
@@ -166,8 +167,8 @@ public class ProductivityBuddy extends Application {
     // REFRESH UI — poziva se sa UI niti
     // ==========================================
     private void refreshUI() {
-        if (mainChartView != null) {
-            mainChartView.refreshUI();
+        if (activeView != null) {
+            activeView.refreshUI();
         }
     }
 
@@ -236,6 +237,14 @@ public class ProductivityBuddy extends Application {
         long minutes = (totalSeconds % 3600) / 60;
         long seconds = totalSeconds % 60;
         return String.format("%dh %02dm %02ds", hours, minutes, seconds);
+    }
+
+    public static String formatRam(long bytes) {
+        if (bytes <= 0) return "0 B";
+        if (bytes < 1024) return bytes + " B";
+        if (bytes < 1024 * 1024) return String.format("%.0f KB", bytes / 1024.0);
+        if (bytes < 1024 * 1024 * 1024) return String.format("%.1f MB", bytes / (1024.0 * 1024));
+        return String.format("%.2f GB", bytes / (1024.0 * 1024 * 1024));
     }
 
     public static void main(String[] args) {

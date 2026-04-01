@@ -3,6 +3,7 @@ package org.productivity_buddy.view;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
@@ -18,28 +19,40 @@ import org.productivity_buddy.ProcessInfo;
 import org.productivity_buddy.ProcessRegistry;
 import org.productivity_buddy.ProductivityBuddy;
 
-public class ProcessDetailView {
+public class ProcessDetailView implements RefreshableView {
 
     private final ProcessRegistry registry;
     private final ProductivityBuddy app;
+    private final String processName;
 
-    public ProcessDetailView(ProcessRegistry registry, ProductivityBuddy app) {
+    // live-update polja
+    private TableView<ProcessInfo> table;
+    private Label lblTime;
+    private Label lblRamLabel;
+    private Label lblRamRank;
+    private Label lblCpuLabel;
+    private Label lblCpuRank;
+
+    public ProcessDetailView(ProcessRegistry registry, ProductivityBuddy app, String processName) {
         this.registry = registry;
         this.app = app;
+        this.processName = processName;
     }
 
-    public Node createView(String processName) {
+    public Node createView() {
         HBox mainLayout = new HBox(24);
         mainLayout.setPadding(new Insets(24));
 
-        // ===== LEVA STRANA: Tabela procesa (proces | kategorija) =====
+        ProcessInfo procInfo = registry.get(processName);
+
+        // ===== LEVA STRANA: Tabela procesa =====
         VBox leftPane = new VBox(12);
         HBox.setHgrow(leftPane, Priority.ALWAYS);
 
         Label tableTitle = new Label("Active Processes");
         tableTitle.getStyleClass().add("section-title");
 
-        TableView<ProcessInfo> table = new TableView<>();
+        table = new TableView<>();
 
         TableColumn<ProcessInfo, String> colName = new TableColumn<>("Process");
         colName.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<ProcessInfo, String>, ObservableValue<String>>() {
@@ -56,14 +69,13 @@ public class ProcessDetailView {
                 return new SimpleStringProperty(data.getValue().getCategory());
             }
         });
-
         table.getColumns().addAll(colName, colCategory);
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_ALL_COLUMNS);
         VBox.setVgrow(table, Priority.ALWAYS);
+        applyUncategorizedLastSortPolicy(table);
 
         table.setItems(FXCollections.observableArrayList(registry.getAll()));
 
-        // dupli klik na drugi proces — otvori njegove detalje
         table.setOnMouseClicked(new EventHandler<MouseEvent>() {
             @Override
             public void handle(MouseEvent event) {
@@ -81,8 +93,6 @@ public class ProcessDetailView {
         rightPane.setPrefWidth(420);
         rightPane.setAlignment(Pos.TOP_LEFT);
 
-        ProcessInfo procInfo = registry.get(processName);
-
         Button btnBack = new Button("\u2190  Back to Main");
         btnBack.getStyleClass().addAll("btn-secondary", "back-button");
         btnBack.setOnAction(new EventHandler<ActionEvent>() {
@@ -96,33 +106,8 @@ public class ProcessDetailView {
         Label lblTitle = new Label("Process: " + displayName);
         lblTitle.getStyleClass().add("header-title");
 
-        long totalTime = (procInfo != null) ? procInfo.getEffectiveTotalTime() : 0;
-        Label lblTime = new Label("Total time - " + ProductivityBuddy.formatTime(totalTime));
+        lblTime = new Label();
         lblTime.getStyleClass().add("time-label");
-
-        // RAM i CPU sa rangiranjem
-        String ramValue = "N/A";
-        String cpuValue = "N/A";
-        String ramRank = "";
-        String cpuRank = "";
-
-        if (procInfo != null) {
-            ramValue = String.format("%.1f%%", (procInfo.getRamUsageBytes() * 100.0)
-                    / Runtime.getRuntime().totalMemory());
-            cpuValue = String.format("%.1f%%", procInfo.getCpuUsage());
-
-            int cpuPosition = 1;
-            int ramPosition = 1;
-            int totalProcesses = 0;
-            for (ProcessInfo other : registry.getAll()) {
-                if (!other.isAlive()) continue;
-                totalProcesses++;
-                if (other.getCpuUsage() > procInfo.getCpuUsage()) cpuPosition++;
-                if (other.getRamUsageBytes() > procInfo.getRamUsageBytes()) ramPosition++;
-            }
-            ramRank = ramPosition + "th on RAM usage";
-            cpuRank = cpuPosition + "th on CPU usage";
-        }
 
         // Stats grid 2x2
         GridPane statsGrid = new GridPane();
@@ -130,19 +115,19 @@ public class ProcessDetailView {
         statsGrid.setVgap(12);
         statsGrid.getStyleClass().add("stats-box");
 
-        Label lblRamLabel = new Label("RAM usage " + ramValue);
+        lblRamLabel = new Label();
         lblRamLabel.getStyleClass().add("stat-label");
         lblRamLabel.setStyle("-fx-font-size: 14px;");
 
-        Label lblRamRank = new Label(ramRank);
+        lblRamRank = new Label();
         lblRamRank.getStyleClass().add("stat-rank");
         lblRamRank.setStyle("-fx-font-size: 13px;");
 
-        Label lblCpuLabel = new Label("CPU usage " + cpuValue);
+        lblCpuLabel = new Label();
         lblCpuLabel.getStyleClass().add("stat-label");
         lblCpuLabel.setStyle("-fx-font-size: 14px;");
 
-        Label lblCpuRank = new Label(cpuRank);
+        lblCpuRank = new Label();
         lblCpuRank.getStyleClass().add("stat-rank");
         lblCpuRank.setStyle("-fx-font-size: 13px;");
 
@@ -151,7 +136,7 @@ public class ProcessDetailView {
         statsGrid.add(lblCpuLabel, 0, 1);
         statsGrid.add(lblCpuRank, 1, 1);
 
-        // Kontrole 2x2: Kill | Change Name / Freeze | Change Category
+        // Kontrole 2x2
         GridPane controlsGrid = new GridPane();
         controlsGrid.setHgap(14);
         controlsGrid.setVgap(14);
@@ -242,8 +227,57 @@ public class ProcessDetailView {
         controlsGrid.add(btnCategory, 1, 1);
 
         rightPane.getChildren().addAll(btnBack, lblTitle, lblTime, statsGrid, controlsGrid);
-
         mainLayout.getChildren().addAll(leftPane, rightPane);
+
+        // prvi refresh da popuni vrednosti
+        refreshUI();
+
         return mainLayout;
+    }
+
+    @Override
+    public void refreshUI() {
+        ProcessInfo procInfo = registry.get(processName);
+
+        // azuriraj stats labele
+        if (procInfo != null) {
+            lblTime.setText("Total time - " + ProductivityBuddy.formatTime(procInfo.getEffectiveTotalTime()));
+            lblRamLabel.setText("RAM usage " + ProductivityBuddy.formatRam(procInfo.getRamUsageBytes()));
+            lblCpuLabel.setText("CPU usage " + String.format("%.1f%%", procInfo.getCpuUsage()));
+
+            int cpuPosition = 1;
+            int ramPosition = 1;
+            int totalProcesses = 0;
+            for (ProcessInfo other : registry.getAll()) {
+                if (!other.isAlive()) continue;
+                totalProcesses++;
+                if (other.getCpuUsage() > procInfo.getCpuUsage()) cpuPosition++;
+                if (other.getRamUsageBytes() > procInfo.getRamUsageBytes()) ramPosition++;
+            }
+            lblRamRank.setText(ramPosition + "th on RAM usage");
+            lblCpuRank.setText(cpuPosition + "th on CPU usage");
+        } else {
+            lblTime.setText("Total time - N/A");
+            lblRamLabel.setText("RAM usage N/A");
+            lblCpuLabel.setText("CPU usage N/A");
+            lblRamRank.setText("");
+            lblCpuRank.setText("");
+        }
+
+        // refresh tabele
+        if (table != null) {
+            retainSortOrder(table, new Runnable() {
+                @Override
+                public void run() {
+                    ObservableList<ProcessInfo> currentItems = table.getItems();
+                    java.util.Collection<ProcessInfo> registryItems = registry.getAll();
+                    if (currentItems.size() != registryItems.size()) {
+                        table.setItems(FXCollections.observableArrayList(registryItems));
+                    } else {
+                        table.refresh();
+                    }
+                }
+            });
+        }
     }
 }

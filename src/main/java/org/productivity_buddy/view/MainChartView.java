@@ -23,7 +23,7 @@ import org.productivity_buddy.workers.AnalyticsWorker;
 
 import java.util.Map;
 
-public class MainChartView {
+public class MainChartView implements RefreshableView {
 
     private final ProcessRegistry registry;
     private final AnalyticsWorker analyticsWorker;
@@ -67,10 +67,10 @@ public class MainChartView {
                 return new SimpleStringProperty(data.getValue().getCategory());
             }
         });
-
         mainTable.getColumns().addAll(colName, colCategory);
         mainTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_ALL_COLUMNS);
         VBox.setVgrow(mainTable, Priority.ALWAYS);
+        applyUncategorizedLastSortPolicy(mainTable);
 
         mainTable.setItems(FXCollections.observableArrayList(registry.getAll()));
 
@@ -117,14 +117,19 @@ public class MainChartView {
     public void refreshUI() {
         // TABELA
         if (mainTable != null) {
-            ObservableList<ProcessInfo> currentItems = mainTable.getItems();
-            java.util.Collection<ProcessInfo> registryItems = registry.getAll();
+            retainSortOrder(mainTable, new Runnable() {
+                @Override
+                public void run() {
+                    ObservableList<ProcessInfo> currentItems = mainTable.getItems();
+                    java.util.Collection<ProcessInfo> registryItems = registry.getAll();
 
-            if (currentItems.size() != registryItems.size()) {
-                mainTable.setItems(FXCollections.observableArrayList(registryItems));
-            } else {
-                mainTable.refresh();
-            }
+                    if (currentItems.size() != registryItems.size()) {
+                        mainTable.setItems(FXCollections.observableArrayList(registryItems));
+                    } else {
+                        mainTable.refresh();
+                    }
+                }
+            });
         }
 
         // PIE CHART
