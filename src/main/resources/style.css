@@ -520,3 +520,30 @@
     -fx-text-fill: #c4b5fd;
     -fx-border-color: #4e4a78;
 }
+
+/* ===== HELP BUTTON ===== */
+.btn-help {
+    -fx-background-color: #2a2745;
+    -fx-text-fill: #a5b4fc;
+    -fx-border-color: #3a3660;
+    -fx-font-weight: bold;
+    -fx-font-size: 15px;
+    -fx-min-width: 32;
+    -fx-min-height: 32;
+    -fx-max-width: 32;
+    -fx-max-height: 32;
+    -fx-background-radius: 16;
+    -fx-border-radius: 16;
+    -fx-padding: 0;
+}
+
+.btn-help:hover {
+    -fx-background-color: #3a3660;
+    -fx-text-fill: #c4b5fd;
+    -fx-border-color: #4e4a78;
+    -fx-effect: dropshadow(gaussian, rgba(124,58,237,0.3), 8, 0, 0, 2);
+}
+
+.btn-help:pressed {
+    -fx-background-color: #1e1c35;
+}

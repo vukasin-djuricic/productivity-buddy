@@ -22,6 +22,7 @@ import org.productivity_buddy.view.MainChartView;
 import org.productivity_buddy.view.ProcessDetailView;
 import org.productivity_buddy.view.RefreshablePanel;
 import org.productivity_buddy.view.RefreshableView;
+import org.productivity_buddy.view.HelpView;
 import org.productivity_buddy.view.SpecificCategoryView;
 import org.productivity_buddy.workers.AnalyticsWorker;
 import org.productivity_buddy.workers.FileWatcherWorker;
@@ -284,6 +285,14 @@ public class ProductivityBuddy extends Application {
         activeRightView = null;
     }
 
+    public void navigateToHelp() {
+        showingFullScreenView = true;
+        HelpView view = new HelpView(this);
+        rootPane.setCenter(view.createView());
+        currentFullScreenView = view;
+        activeRightView = null;
+    }
+
     private void performShutdown() {
         scanner.shutdown();
         analyticsWorker.stop();
@@ -326,6 +335,15 @@ public class ProductivityBuddy extends Application {
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
+        Button btnHelp = new Button("?");
+        btnHelp.getStyleClass().add("btn-help");
+        btnHelp.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent event) {
+                navigateToHelp();
+            }
+        });
+
         Button btnSave = new Button("Save");
         btnSave.getStyleClass().add("btn-secondary");
         btnSave.setOnAction(new EventHandler<ActionEvent>() {
@@ -364,7 +382,7 @@ public class ProductivityBuddy extends Application {
             }
         });
 
-        topBar.getChildren().addAll(appTitle, spacer, btnSave, btnLoad, btnShutdown);
+        topBar.getChildren().addAll(appTitle, spacer, btnHelp, btnSave, btnLoad, btnShutdown);
         return topBar;
     }
 

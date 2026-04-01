@@ -111,3 +111,4 @@ data/                             # Runtime data (JSON + CSV snapshots)
 - No existing Cursor rules, Copilot instructions, or prior AGENTS.md
 - The `data/` directory contains runtime-generated files (gitignored)
 - Distribution uses `jlink` via the `org.beryx.jlink` plugin (v2.25.0)
+- Agency agent definitions: `<local-path-redacted>`
