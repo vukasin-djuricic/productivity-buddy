@@ -11,6 +11,8 @@ import javafx.scene.Node;
 import javafx.scene.chart.PieChart;
 import javafx.scene.control.*;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.shape.Rectangle;
+import javafx.scene.paint.Color;
 import javafx.scene.layout.*;
 import javafx.util.Callback;
 import javafx.event.ActionEvent;
@@ -35,6 +37,7 @@ public class SpecificCategoryView implements RefreshableView {
     // live-update polja
     private TableView<ProcessInfo> table;
     private PieChart top10Chart;
+    private VBox top10ListContainer;
     private Label lblTotalTime;
 
     public SpecificCategoryView(ProcessRegistry registry, AnalyticsWorker analyticsWorker,
@@ -128,16 +131,18 @@ public class SpecificCategoryView implements RefreshableView {
         Label top10Label = new Label("Top 10 processes by time spent");
         top10Label.getStyleClass().add("section-title");
 
-        top10Chart = new PieChart();
-        top10Chart.setLabelsVisible(true);
-        top10Chart.setMaxHeight(300);
-        top10Chart.setLegendVisible(true);
+        //top10Chart = new PieChart();
+        //top10Chart.setLabelsVisible(true);
+        //top10Chart.setLegendVisible(true);
+        //top10Chart.setAnimated(false);
+        top10ListContainer = new VBox(12);
 
         lblTotalTime = new Label();
         lblTotalTime.getStyleClass().add("time-label");
         lblTotalTime.setPadding(new Insets(8, 0, 0, 0));
 
-        rightBox.getChildren().addAll(top10Label, top10Chart, lblTotalTime);
+        rightBox.getChildren().addAll(top10Label, top10ListContainer, lblTotalTime);
+        //rightBox.getChildren().addAll(top10Label, top10Chart, lblTotalTime);
 
         content.getChildren().addAll(leftBox, rightBox);
         VBox.setVgrow(content, Priority.ALWAYS);
@@ -180,8 +185,11 @@ public class SpecificCategoryView implements RefreshableView {
         }
 
         // azuriraj top 10 pie chart
-        if (top10Chart != null) {
-            // sortiraj po vremenu, uzmi top 10
+        // azuriraj top 10 listu sa vizuelnim trakama
+        if (top10ListContainer != null) {
+            top10ListContainer.getChildren().clear();
+
+            // sortiraj po vremenu
             List<ProcessInfo> sorted = new ArrayList<>(filtered);
             sorted.sort(new Comparator<ProcessInfo>() {
                 @Override
@@ -193,29 +201,64 @@ public class SpecificCategoryView implements RefreshableView {
                 sorted = sorted.subList(0, 10);
             }
 
-            // proveri da li treba rebuild (size ili imena se razlikuju)
-            boolean needsRebuild = (top10Chart.getData().size() != sorted.size());
-            if (!needsRebuild) {
-                for (int i = 0; i < sorted.size(); i++) {
-                    if (!top10Chart.getData().get(i).getName().equals(sorted.get(i).getAliasName())) {
-                        needsRebuild = true;
-                        break;
-                    }
-                }
-            }
+            // Nadji maksimalno vreme kako bi najveci proces imao punu traku (100%)
+            long maxTime = sorted.isEmpty() ? 0 : sorted.get(0).getEffectiveTotalTime();
 
-            if (needsRebuild) {
-                top10Chart.getData().clear();
-                for (int i = 0; i < sorted.size(); i++) {
-                    ProcessInfo p = sorted.get(i);
-                    top10Chart.getData().add(new PieChart.Data(
-                            p.getAliasName(), p.getEffectiveTotalTime()));
-                }
-            } else {
-                for (int i = 0; i < sorted.size(); i++) {
-                    top10Chart.getData().get(i).setPieValue(sorted.get(i).getEffectiveTotalTime());
-                }
+            // Kreiraj red za svaki od top 10 procesa
+            for (int i = 0; i < sorted.size(); i++) {
+                ProcessInfo p = sorted.get(i);
+                long time = p.getEffectiveTotalTime();
+                double fillPercentage = (maxTime > 0) ? (double) time / maxTime : 0.0;
+
+                VBox row = createTop10Row(i + 1, p.getAliasName(), time, fillPercentage);
+                top10ListContainer.getChildren().add(row);
             }
         }
+    }
+
+    private VBox createTop10Row(int rank, String name, long time, double fillPercentage) {
+        VBox row = new VBox(6);
+
+        // Tekstualni deo: "1. IntelliJ IDEA" (levo) i "1h 20m" (desno)
+        HBox labels = new HBox();
+        Label lblName = new Label(rank + ". " + name);
+        lblName.setStyle("-fx-text-fill: #e2e0f0; -fx-font-weight: bold; -fx-font-size: 12px;");
+
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+
+        Label lblTime = new Label(ProductivityBuddy.formatTime(time));
+        lblTime.setStyle("-fx-text-fill: #8580b0; -fx-font-size: 12px;");
+
+        labels.getChildren().addAll(lblName, spacer, lblTime);
+
+        // Vizuelni deo: Traka (Bar)
+        StackPane barContainer = new StackPane();
+        barContainer.setAlignment(Pos.CENTER_LEFT);
+        barContainer.setPrefHeight(8);
+        barContainer.setStyle("-fx-background-color: #2a2740; -fx-background-radius: 4;");
+
+        Rectangle fillBar = new Rectangle();
+        fillBar.setHeight(8);
+        fillBar.setArcWidth(8);
+        fillBar.setArcHeight(8);
+
+        // Postavi boju na osnovu kategorije (Ljubicasta za Work, Plava za Fun, Narandzasta za Other)
+        String color = switch (categoryName) {
+            case "Work" -> "#8b5cf6";
+            case "Fun" -> "#06b6d4";
+            default -> "#f59e0b";
+        };
+        fillBar.setFill(Color.web(color));
+
+        // Dinamično popunjavanje trake u odnosu na širinu kontejnera
+        barContainer.widthProperty().addListener((obs, oldVal, newVal) -> {
+            fillBar.setWidth(newVal.doubleValue() * fillPercentage);
+        });
+
+        barContainer.getChildren().add(fillBar);
+
+        row.getChildren().addAll(labels, barContainer);
+        return row;
     }
 }

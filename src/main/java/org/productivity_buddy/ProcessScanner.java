@@ -100,13 +100,17 @@ public class ProcessScanner {
             // Ovo sprecava bug gde 200 chrome instanci dodaje 200x3s umesto 3s
             long now = System.currentTimeMillis();
             for (ProcessInfo pi : registry.getAll()) {
-                if (pi.isAlive() && !pi.isFrozen()) {
-                    long lastUpdate = pi.getLastUpdateTime();
-                    long elapsedSeconds = (now - lastUpdate) / 1000;
-                    if (elapsedSeconds > 0) {
-                        pi.addSessionTime(elapsedSeconds);
-                        pi.setLastUpdateTime(now);
+                if (pi.isAlive()) {
+                    if (!pi.isFrozen()) {
+                        long lastUpdate = pi.getLastUpdateTime();
+                        long elapsedSeconds = (now - lastUpdate) / 1000;
+                        if (elapsedSeconds > 0) {
+                            pi.addSessionTime(elapsedSeconds);
+                        }
                     }
+                    // lastUpdateTime se uvek azurira kako bi se sprecilo
+                    // nagomilavanje zamrznutog vremena po odmrzavanju
+                    pi.setLastUpdateTime(now);
                 }
             }
 

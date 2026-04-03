@@ -344,6 +344,8 @@
 .default-color5.chart-pie { -fx-pie-color: #6366f1; }
 .default-color6.chart-pie { -fx-pie-color: #ec4899; }
 .default-color7.chart-pie { -fx-pie-color: #14b8a6; }
+.default-color8.chart-pie { -fx-pie-color: #a3e635; }
+.default-color9.chart-pie { -fx-pie-color: #fb923c; }
 
 /* Legend symbol colors to match pie */
 .default-color0.chart-legend-item-symbol { -fx-background-color: #8b5cf6; }
@@ -354,6 +356,8 @@
 .default-color5.chart-legend-item-symbol { -fx-background-color: #6366f1; }
 .default-color6.chart-legend-item-symbol { -fx-background-color: #ec4899; }
 .default-color7.chart-legend-item-symbol { -fx-background-color: #14b8a6; }
+.default-color8.chart-legend-item-symbol { -fx-background-color: #a3e635; }
+.default-color9.chart-legend-item-symbol { -fx-background-color: #fb923c; }
 
 /* ===== CATEGORY ROW ===== */
 .category-row {

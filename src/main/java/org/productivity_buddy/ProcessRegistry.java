@@ -7,18 +7,29 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ProcessRegistry {
 
     private final ConcurrentHashMap<String, ProcessInfo> processMap;
+    private volatile CategorizationService categorizationService;
 
     public ProcessRegistry() {
         this.processMap = new ConcurrentHashMap<>();
     }
 
+    public void setCategorizationService(CategorizationService service) {
+        this.categorizationService = service;
+    }
+
     // computeIfAbsent je ATOMICNA operacija — ako dve niti istovremeno
     // pozovu ovo za isti proces, samo jedna ce kreirati objekat
+    // pri prvom kreiranju, auto-kategorizacija se primenjuje ako postoji servis
     public ProcessInfo getOrCreate(String procName) {
         return processMap.computeIfAbsent(procName, new java.util.function.Function<String, ProcessInfo>() {
             @Override
             public ProcessInfo apply(String name) {
-                return new ProcessInfo(name);
+                ProcessInfo info = new ProcessInfo(name);
+                if (categorizationService != null) {
+                    ProcessCategory cat = categorizationService.categorize(name);
+                    info.setCategory(cat);
+                }
+                return info;
             }
         });
     }

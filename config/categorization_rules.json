@@ -1,0 +1,52 @@
+{
+  "rules": [
+    {
+      "pattern": "idea64|intellij|eclipse|vscode|code|gradle|mvn|maven|pycharm|webstorm|phpstorm|rider|clion|android",
+      "category": "Work"
+    },
+    {
+      "pattern": "terminal|cmd|powershell|bash|zsh|iterm|warp|alacritty|conhost",
+      "category": "Work"
+    },
+    {
+      "pattern": "slack|teams|zoom|telegram|skype|webex|meet",
+      "category": "Work"
+    },
+    {
+      "pattern": "git|github|gitlab|docker|kubectl|node|python|ruby|java|mysql|postgres|mongo|redis|postman|insomnia|datagrip|dbeaver",
+      "category": "Work"
+    },
+    {
+      "pattern": "word|excel|powerpoint|keynote|pages|numbers|office|acrobat|notion|obsidian|evernote|roam|trello|jira",
+      "category": "Work"
+    },
+    {
+      "pattern": "photoshop|illustrator|figma|xd|premiere|aftereffects|lightroom|indesign|canva",
+      "category": "Work"
+    },
+    {
+      "pattern": "chrome|firefox|safari|brave|edge|opera|vivaldi|browser|jcef|arc",
+      "category": "Fun"
+    },
+    {
+      "pattern": "spotify|vlc|itunes|music|audacity|quicktime|stremio|popcorn",
+      "category": "Fun"
+    },
+    {
+      "pattern": "steam|epic|riot|minecraft|unity|blender|roblox|gog|discord|whatsapp|viber|signal",
+      "category": "Fun"
+    },
+    {
+      "pattern": "spotlight|finder|dock|windowserver|controlcenter|loginwindow|screencapture|activity monitor|taskmgr|explorer",
+      "category": "Other"
+    },
+    {
+      "pattern": "helper|agent|system|window|ui|apple|core|service|extension|sync|daemon|monitor|crash|update|login|auth|provider|broker|client|server|control|widget|framework|manager|proxy",
+      "category": "Other"
+    },
+    {
+      "pattern": "[a-z]+d$",
+      "category": "Other"
+    }
+  ]
+}

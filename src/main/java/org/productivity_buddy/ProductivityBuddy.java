@@ -50,6 +50,7 @@ public class ProductivityBuddy extends Application {
     private Thread analyticsThread;
     private FileWatcherWorker fileWatcherWorker;
     private Thread watcherThread;
+    private CategorizationService categorizationService;
     private ScheduledExecutorService snapshotScheduler;
 
     // shared layout — tabela zivi kroz celu sesiju
@@ -75,7 +76,13 @@ public class ProductivityBuddy extends Application {
         // 2. Kreiraj centralni registar
         registry = new ProcessRegistry();
 
+        // 2.5 Kreiraj servis za auto-kategorizaciju (rule-based regex matching)
+        categorizationService = new CategorizationService("config/categorization_rules.json");
+        categorizationService.loadRules();
+        registry.setCategorizationService(categorizationService);
+
         // 3. Kreiraj file service i ucitaj prethodno stanje
+        // (JSON kategorije imaju prioritet nad auto-pravilima)
         fileService = new FileService(registry);
         fileService.loadProcessInfo(config.getMappingFile());
 
@@ -116,8 +123,10 @@ public class ProductivityBuddy extends Application {
             }
         }, config.getSnapshotInterval(), config.getSnapshotInterval(), TimeUnit.SECONDS);
 
-        // 7. Pokreni FileWatcher nit
+        // 7. Pokreni FileWatcher nit (nadgleda i process_info.json i pravila kategorizacije)
         fileWatcherWorker = new FileWatcherWorker(config.getMappingFile(), fileService);
+        fileWatcherWorker.setCategorizationWatcher(
+                categorizationService.getRulesFilePath(), categorizationService);
         watcherThread = new Thread(fileWatcherWorker, "FileWatcher-Thread");
         watcherThread.setDaemon(true);
         watcherThread.start();

@@ -1,5 +1,6 @@
 package org.productivity_buddy.workers;
 
+import org.productivity_buddy.CategorizationService;
 import org.productivity_buddy.FileService;
 
 import java.io.IOException;
@@ -15,6 +16,8 @@ public class FileWatcherWorker implements Runnable {
 
     private final Path filePath;
     private final FileService fileService;
+    private Path rulesFilePath;
+    private CategorizationService categorizationService;
     private volatile boolean running;
 
     public FileWatcherWorker(String filePath, FileService fileService) {
@@ -23,12 +26,18 @@ public class FileWatcherWorker implements Runnable {
         this.running = true;
     }
 
+    // dodaj nadgledanje fajla sa pravilima za auto-kategorizaciju
+    public void setCategorizationWatcher(String rulesFile, CategorizationService service) {
+        this.rulesFilePath = Path.of(rulesFile);
+        this.categorizationService = service;
+    }
+
     @Override
     public void run() {
         try {
             WatchService watchService = FileSystems.getDefault().newWatchService();
 
-            // registruj DIREKTORIJUM za pracenje (ne fajl)
+            // registruj DIREKTORIJUM za pracenje process_info.json
             Path dir = filePath.getParent();
             if (dir == null) {
                 dir = Path.of(".");
@@ -37,18 +46,31 @@ public class FileWatcherWorker implements Runnable {
 
             String fileName = filePath.getFileName().toString();
 
+            // registruj direktorijum za rules fajl (ako je postavljen)
+            String rulesFileName = null;
+            if (rulesFilePath != null) {
+                Path rulesDir = rulesFilePath.getParent();
+                if (rulesDir == null) {
+                    rulesDir = Path.of(".");
+                }
+                // ako su u razlicitim direktorijumima, registruj i drugi
+                if (!rulesDir.toAbsolutePath().equals(dir.toAbsolutePath())) {
+                    rulesDir.register(watchService, StandardWatchEventKinds.ENTRY_MODIFY);
+                }
+                rulesFileName = rulesFilePath.getFileName().toString();
+            }
+
             while (running) {
                 // blokiraj nit dok se ne desi promena (ne trosi CPU)
                 WatchKey key = watchService.take();
 
                 for (WatchEvent<?> event : key.pollEvents()) {
                     Path changed = (Path) event.context();
+                    String changedName = changed.toString();
 
-                    // proveri da li je promenjen NAS fajl
-                    if (changed.toString().equals(fileName)) {
+                    if (changedName.equals(fileName)) {
+                        // promena u process_info.json
                         System.out.println("Detektovana promena u " + fileName);
-
-                        // sacekaj da se fajl kompletno zapise
                         Thread.sleep(200);
 
                         try {
@@ -57,6 +79,11 @@ public class FileWatcherWorker implements Runnable {
                         } catch (IOException e) {
                             System.err.println("Greska pri citanju: " + e.getMessage());
                         }
+                    } else if (rulesFileName != null && changedName.equals(rulesFileName)) {
+                        // promena u categorization_rules.json — hot-reload
+                        System.out.println("Detektovana promena u " + rulesFileName);
+                        Thread.sleep(200);
+                        categorizationService.reloadRules();
                     }
                 }
 
