@@ -6,7 +6,7 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.util.Callback;
 
-import org.productivity_buddy.ProcessInfo;
+import org.productivity_buddy.model.ProcessInfo;
 
 import java.util.ArrayList;
 import java.util.Comparator;

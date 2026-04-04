@@ -14,11 +14,11 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.util.Callback;
 
-import org.productivity_buddy.ProcessCategory;
-import org.productivity_buddy.ProcessInfo;
-import org.productivity_buddy.ProcessRegistry;
+import org.productivity_buddy.model.ProcessCategory;
+import org.productivity_buddy.model.ProcessInfo;
+import org.productivity_buddy.model.ProcessRegistry;
 import org.productivity_buddy.ProductivityBuddy;
-import org.productivity_buddy.TabInfo;
+import org.productivity_buddy.model.TabInfo;
 
 public class ProcessDetailView implements RefreshablePanel {
 

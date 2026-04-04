@@ -3,7 +3,7 @@ plugins {
     id 'application'
     id 'org.javamodularity.moduleplugin' version '1.8.12'
     id 'org.openjfx.javafxplugin' version '0.0.13'
-    id 'org.beryx.jlink' version '2.25.0'
+    id 'org.beryx.jlink' version '2.26.0'
 }
 
 group 'org.uma_gym'
@@ -54,6 +54,12 @@ jlink {
     options = ['--strip-debug', '--compress', '2', '--no-header-files', '--no-man-pages']
     launcher {
         name = 'app'
+    }
+    jpackage {
+        imageName = 'ProductivityBuddy'
+        installerName = 'ProductivityBuddy'
+        installerType = 'dmg'
+        installerOptions = ['--mac-package-name', 'Productivity Buddy']
     }
 }
 

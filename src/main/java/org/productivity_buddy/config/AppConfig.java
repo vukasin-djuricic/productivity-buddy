@@ -1,4 +1,4 @@
-package org.productivity_buddy;
+package org.productivity_buddy.config;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+import java.nio.file.Path;
 
 public class AppConfig {
 
@@ -17,7 +18,7 @@ public class AppConfig {
     public AppConfig(String configPath) {
         // default vrednosti
         this.monitorInterval = 3000;
-        this.mappingFile = "data/process_info.json";
+        this.mappingFile = AppDirs.resolve("data/process_info.json");
         this.snapshotInterval = 60;
         this.fixedSnapshotTimes = new ArrayList<>();
 
@@ -29,7 +30,7 @@ public class AppConfig {
             String intervalStr = props.getProperty("monitor.interval", "3000");
             this.monitorInterval = Long.parseLong(intervalStr);
 
-            this.mappingFile = props.getProperty("mapping.file", "process_info.json");
+            this.mappingFile = AppDirs.resolve(props.getProperty("mapping.file", "data/process_info.json"));
 
             String snapshotStr = props.getProperty("snapshot.interval", "60");
             this.snapshotInterval = Long.parseLong(snapshotStr);

@@ -1,9 +1,9 @@
 package org.productivity_buddy.workers;
 
 import javafx.application.Platform;
-import org.productivity_buddy.ProcessInfo;
-import org.productivity_buddy.ProcessRegistry;
-import org.productivity_buddy.TabInfo;
+import org.productivity_buddy.model.ProcessInfo;
+import org.productivity_buddy.model.ProcessRegistry;
+import org.productivity_buddy.model.TabInfo;
 
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;

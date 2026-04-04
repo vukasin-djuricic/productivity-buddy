@@ -1,4 +1,4 @@
-package org.productivity_buddy;
+package org.productivity_buddy.model;
 
 public enum ProcessCategory {
 

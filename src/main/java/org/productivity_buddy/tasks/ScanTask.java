@@ -1,7 +1,7 @@
 package org.productivity_buddy.tasks;
 
-import org.productivity_buddy.ProcessInfo;
-import org.productivity_buddy.ProcessRegistry;
+import org.productivity_buddy.model.ProcessInfo;
+import org.productivity_buddy.model.ProcessRegistry;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.RecursiveAction;

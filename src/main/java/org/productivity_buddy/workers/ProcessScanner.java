@@ -1,5 +1,9 @@
-package org.productivity_buddy;
+package org.productivity_buddy.workers;
 
+import org.productivity_buddy.model.ProcessInfo;
+import org.productivity_buddy.model.ProcessRegistry;
+import org.productivity_buddy.model.TabInfo;
+import org.productivity_buddy.service.BrowserTabService;
 import org.productivity_buddy.tasks.ScanTask;
 import oshi.SystemInfo;
 import oshi.software.os.OSProcess;

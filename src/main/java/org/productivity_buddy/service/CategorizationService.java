@@ -1,4 +1,6 @@
-package org.productivity_buddy;
+package org.productivity_buddy.service;
+
+import org.productivity_buddy.model.ProcessCategory;
 
 import java.io.IOException;
 import java.nio.file.Files;

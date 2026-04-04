@@ -18,9 +18,17 @@ import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 import javafx.util.Callback;
 
+import org.productivity_buddy.config.AppConfig;
+import org.productivity_buddy.config.AppDirs;
+import org.productivity_buddy.model.ProcessInfo;
+import org.productivity_buddy.model.ProcessRegistry;
+import org.productivity_buddy.service.BrowserTabService;
+import org.productivity_buddy.service.CategorizationService;
+import org.productivity_buddy.service.FileService;
 import org.productivity_buddy.view.*;
 import org.productivity_buddy.workers.AnalyticsWorker;
 import org.productivity_buddy.workers.FileWatcherWorker;
+import org.productivity_buddy.workers.ProcessScanner;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -67,13 +75,13 @@ public class ProductivityBuddy extends Application {
         this.primaryStage = primaryStage;
 
         // 1. Ucitaj konfiguraciju
-        config = new AppConfig("config/config.properties");
+        config = new AppConfig(AppDirs.resolve("config/config.properties"));
 
         // 2. Kreiraj centralni registar
         registry = new ProcessRegistry();
 
         // 2.5 Kreiraj servis za auto-kategorizaciju (rule-based regex matching)
-        categorizationService = new CategorizationService("config/categorization_rules.json");
+        categorizationService = new CategorizationService(AppDirs.resolve("config/categorization_rules.json"));
         categorizationService.loadRules();
         registry.setCategorizationService(categorizationService);
 

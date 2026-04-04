@@ -1,4 +1,9 @@
-package org.productivity_buddy;
+package org.productivity_buddy.service;
+
+import org.productivity_buddy.model.ProcessCategory;
+import org.productivity_buddy.model.ProcessInfo;
+import org.productivity_buddy.model.ProcessRegistry;
+import org.productivity_buddy.model.TabInfo;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;

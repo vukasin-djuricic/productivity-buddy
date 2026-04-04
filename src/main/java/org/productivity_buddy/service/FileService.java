@@ -1,4 +1,10 @@
-package org.productivity_buddy;
+package org.productivity_buddy.service;
+
+import org.productivity_buddy.config.AppDirs;
+import org.productivity_buddy.model.ProcessCategory;
+import org.productivity_buddy.model.ProcessInfo;
+import org.productivity_buddy.model.ProcessRegistry;
+import org.productivity_buddy.model.TabInfo;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -281,7 +287,7 @@ public class FileService {
                 try {
                     String timestamp = LocalDateTime.now()
                             .format(DateTimeFormatter.ofPattern("yyyy_MM_dd_HH_mm_ss"));
-                    String fileName = "data/snapshot_" + timestamp + ".csv";
+                    String fileName = AppDirs.resolve("data/snapshot_" + timestamp + ".csv");
 
                     StringBuilder csv = new StringBuilder();
                     csv.append("timestamp,pid,process_name,cpu_usage,ram_usage,category,alias_name\n");

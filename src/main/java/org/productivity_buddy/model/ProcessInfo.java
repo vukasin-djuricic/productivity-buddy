@@ -1,4 +1,4 @@
-package org.productivity_buddy;
+package org.productivity_buddy.model;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -50,7 +50,7 @@ public class ProcessInfo {
         this.active = false;
     }
 
-    // kada istovremeno pokušaju da dodaju RAM i CPU za isti program (npr. Chrome)
+    // kada istovremeno pokušaju da dodaju RAM i CPU za isti program (npr. java)
     public synchronized void addMetrics(double cpuDelta, long ramDelta) {
         this.cpuUsage += cpuDelta;
         this.ramUsageBytes += ramDelta;

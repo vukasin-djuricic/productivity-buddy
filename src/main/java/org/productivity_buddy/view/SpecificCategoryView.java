@@ -17,10 +17,10 @@ import javafx.scene.layout.*;
 import javafx.util.Callback;
 import javafx.event.ActionEvent;
 
-import org.productivity_buddy.ProcessInfo;
-import org.productivity_buddy.ProcessRegistry;
+import org.productivity_buddy.model.ProcessInfo;
+import org.productivity_buddy.model.ProcessRegistry;
 import org.productivity_buddy.ProductivityBuddy;
-import org.productivity_buddy.TabInfo;
+import org.productivity_buddy.model.TabInfo;
 import org.productivity_buddy.workers.AnalyticsWorker;
 
 import java.util.ArrayList;
@@ -169,6 +169,7 @@ public class SpecificCategoryView implements RefreshableView {
         tabTable.setVisible(false);
         tabTable.setManaged(false);
         tabTable.setPrefHeight(260);
+        tabTable.setMinHeight(150);
         tabTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_ALL_COLUMNS);
 
         TableColumn<TabInfo, String> colTabName = new TableColumn<>("Tab");
@@ -246,8 +247,18 @@ public class SpecificCategoryView implements RefreshableView {
                 totalTime += info.getEffectiveTotalTime();
             }
 
-            // pretrazi tracked tabove svih procesa za ovu kategoriju
+            // pretrazi sve tabove (spoj transient i tracked) za ovu kategoriju
+            java.util.Map<String, TabInfo> mergedTabs = new java.util.LinkedHashMap<>();
             for (TabInfo tab : info.getTrackedTabs()) {
+                mergedTabs.put(tab.getDomain(), tab);
+            }
+            for (TabInfo tab : info.getTabs()) {
+                if (!tab.getDomain().isEmpty() && !mergedTabs.containsKey(tab.getDomain())) {
+                    mergedTabs.put(tab.getDomain(), tab);
+                }
+            }
+
+            for (TabInfo tab : mergedTabs.values()) {
                 if (tab.getCategory().equals(categoryName)) {
                     categoryTabs.add(tab);
                     // dodaj tab vreme na total ako proces sam nije u ovoj kategoriji

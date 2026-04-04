@@ -903,6 +903,8 @@ public class NewHelpView implements RefreshableView {
     private Circle createParticle(String color) {
         Circle particle = new Circle(5);
         particle.setFill(Color.web(color));
+        particle.setStroke(Color.WHITE);
+        particle.setStrokeWidth(1.2);
         DropShadow particleGlow = new DropShadow(10, Color.web(color, 0.8));
         particle.setEffect(particleGlow);
         return particle;

@@ -1,4 +1,4 @@
-package org.productivity_buddy;
+package org.productivity_buddy.model;
 
 import java.util.concurrent.atomic.AtomicLong;
 

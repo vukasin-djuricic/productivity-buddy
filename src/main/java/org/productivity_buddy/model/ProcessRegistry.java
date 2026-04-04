@@ -1,4 +1,6 @@
-package org.productivity_buddy;
+package org.productivity_buddy.model;
+
+import org.productivity_buddy.service.CategorizationService;
 
 import java.util.Collection;
 import java.util.Map;

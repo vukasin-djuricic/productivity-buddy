@@ -1,7 +1,7 @@
 package org.productivity_buddy.workers;
 
-import org.productivity_buddy.CategorizationService;
-import org.productivity_buddy.FileService;
+import org.productivity_buddy.service.CategorizationService;
+import org.productivity_buddy.service.FileService;
 
 import java.io.IOException;
 import java.nio.file.FileSystems;
