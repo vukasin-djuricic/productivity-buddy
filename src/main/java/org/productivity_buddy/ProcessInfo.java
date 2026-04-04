@@ -45,6 +45,12 @@ public class ProcessInfo {
         this.active = false;
     }
 
+    // kada istovremeno pokušaju da dodaju RAM i CPU za isti program (npr. Chrome)
+    public synchronized void addMetrics(double cpuDelta, long ramDelta) {
+        this.cpuUsage += cpuDelta;
+        this.ramUsageBytes += ramDelta;
+    }
+
     // --- GETTERI ---
     public String getOriginalName() { return originalName; }
     public long getPid() { return pid; }

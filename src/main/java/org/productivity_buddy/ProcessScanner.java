@@ -96,6 +96,8 @@ public class ProcessScanner {
             // 3. Oznaci sve kao neaktivne pre skeniranja
             for (ProcessInfo pi : registry.getAll()) {
                 pi.setActive(false);
+                pi.setCpuUsage(0.0);
+                pi.setRamUsageBytes(0);
             }
 
             // 4. Pokreni ForkJoinPool sa rekurzivnim zadatkom

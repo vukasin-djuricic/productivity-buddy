@@ -98,8 +98,10 @@ public class ScanTask extends RecursiveAction {
             // CPU i RAM iz OSHI metrika
             double[] metrics = oshiMetrics.get(pid);
             if (metrics != null) {
-                procInfo.setCpuUsage(metrics[0]);
-                procInfo.setRamUsageBytes((long) metrics[1]);
+                //procInfo.setCpuUsage(metrics[0]);
+                //procInfo.setRamUsageBytes((long) metrics[1]);
+                //java (200mb) + java (500mb) umesto samo poslednji da upise
+                procInfo.addMetrics(metrics[0], (long) metrics[1]);
             } else {
                 procInfo.setCpuUsage(0.0);
                 procInfo.setRamUsageBytes(0);
