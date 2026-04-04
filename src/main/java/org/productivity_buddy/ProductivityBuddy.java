@@ -81,8 +81,9 @@ public class ProductivityBuddy extends Application {
         fileService = new FileService(registry);
         fileService.loadProcessInfo(config.getMappingFile());
 
-        // 4. Pokreni skener procesa (ForkJoinPool)
-        scanner = new ProcessScanner(registry, 10, config.getMonitorInterval());
+        // 4. Pokreni skener procesa (ForkJoinPool) sa browser tab servisom
+        BrowserTabService browserTabService = new BrowserTabService(categorizationService);
+        scanner = new ProcessScanner(registry, 10, config.getMonitorInterval(), browserTabService);
 
         // 5. Pokreni analitickog workera
         analyticsWorker = new AnalyticsWorker(registry, config.getFixedSnapshotTimes());
@@ -174,7 +175,13 @@ public class ProductivityBuddy extends Application {
         colName.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<ProcessInfo, String>, ObservableValue<String>>() {
             @Override
             public ObservableValue<String> call(TableColumn.CellDataFeatures<ProcessInfo, String> data) {
-                return new SimpleStringProperty(data.getValue().getAliasName());
+                ProcessInfo info = data.getValue();
+                String name = info.getAliasName();
+                // prikazi broj tabova za browser procese
+                if (info.hasTabs()) {
+                    name = name + "  (" + info.getTabs().size() + " tabs)";
+                }
+                return new SimpleStringProperty(name);
             }
         });
 

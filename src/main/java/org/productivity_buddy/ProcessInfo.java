@@ -1,5 +1,7 @@
 package org.productivity_buddy;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
@@ -23,6 +25,9 @@ public class ProcessInfo {
     private volatile long ramUsageBytes;
 
     private volatile boolean active;
+
+    // browser tabovi — volatile lista, zamenjuje se atomicno (copy-on-write pristup)
+    private volatile List<TabInfo> tabs = Collections.emptyList();
 
 
     public ProcessInfo(String originalName) {
@@ -54,6 +59,8 @@ public class ProcessInfo {
     public double getCpuUsage() { return cpuUsage; }
     public long getRamUsageBytes() { return ramUsageBytes; }
     public boolean isAlive() { return active; }
+    public List<TabInfo> getTabs() { return tabs; }
+    public boolean hasTabs() { return !tabs.isEmpty(); }
 
 
     // --- SETTERI ---
@@ -68,6 +75,7 @@ public class ProcessInfo {
     public void setRamUsageBytes(long ram) { this.ramUsageBytes = ram; }
     public void setActive(boolean alive) { this.active = alive; }
     public void setLastUpdateTime(long t) { this.lastUpdateTime = t; }
+    public void setTabs(List<TabInfo> tabs) { this.tabs = Collections.unmodifiableList(tabs); }
 
     public void addSessionTime(long delta)
     {

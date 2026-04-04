@@ -1,5 +1,8 @@
 package org.productivity_buddy.view;
 
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.value.ObservableValue;
+import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
@@ -7,12 +10,15 @@ import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+import javafx.util.Callback;
 
 import org.productivity_buddy.ProcessCategory;
 import org.productivity_buddy.ProcessInfo;
 import org.productivity_buddy.ProcessRegistry;
 import org.productivity_buddy.ProductivityBuddy;
+import org.productivity_buddy.TabInfo;
 
 public class ProcessDetailView implements RefreshablePanel {
 
@@ -25,6 +31,10 @@ public class ProcessDetailView implements RefreshablePanel {
     private Label lblRamRank;
     private Label lblCpuLabel;
     private Label lblCpuRank;
+
+    // tabela browser tabova (vidljiva samo za browser procese)
+    private TableView<TabInfo> tabTable;
+    private Label lblTabsTitle;
 
     public ProcessDetailView(ProcessRegistry registry, ProductivityBuddy app, String processName) {
         this.registry = registry;
@@ -172,6 +182,47 @@ public class ProcessDetailView implements RefreshablePanel {
 
         rightPane.getChildren().addAll(btnBack, lblTitle, lblTime, statsGrid, controlsGrid);
 
+        // tabela browser tabova — vidljiva samo ako proces ima tabove
+        lblTabsTitle = new Label("Browser Tabs");
+        lblTabsTitle.getStyleClass().add("section-title");
+        lblTabsTitle.setVisible(false);
+        lblTabsTitle.setManaged(false);
+
+        tabTable = new TableView<>();
+        tabTable.setVisible(false);
+        tabTable.setManaged(false);
+        tabTable.setPrefHeight(200);
+        tabTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_ALL_COLUMNS);
+
+        TableColumn<TabInfo, String> colTabTitle = new TableColumn<>("Tab");
+        colTabTitle.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<TabInfo, String>, ObservableValue<String>>() {
+            @Override
+            public ObservableValue<String> call(TableColumn.CellDataFeatures<TabInfo, String> data) {
+                return new SimpleStringProperty(data.getValue().getTitle());
+            }
+        });
+
+        TableColumn<TabInfo, String> colTabDomain = new TableColumn<>("Domain");
+        colTabDomain.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<TabInfo, String>, ObservableValue<String>>() {
+            @Override
+            public ObservableValue<String> call(TableColumn.CellDataFeatures<TabInfo, String> data) {
+                return new SimpleStringProperty(data.getValue().getDomain());
+            }
+        });
+
+        TableColumn<TabInfo, String> colTabCategory = new TableColumn<>("Category");
+        colTabCategory.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<TabInfo, String>, ObservableValue<String>>() {
+            @Override
+            public ObservableValue<String> call(TableColumn.CellDataFeatures<TabInfo, String> data) {
+                return new SimpleStringProperty(data.getValue().getCategory());
+            }
+        });
+
+        tabTable.getColumns().addAll(colTabTitle, colTabDomain, colTabCategory);
+        VBox.setVgrow(tabTable, Priority.ALWAYS);
+
+        rightPane.getChildren().addAll(lblTabsTitle, tabTable);
+
         refreshUI();
 
         return rightPane;
@@ -197,6 +248,22 @@ public class ProcessDetailView implements RefreshablePanel {
             }
             lblRamRank.setText(ramPosition + "th on RAM usage");
             lblCpuRank.setText(cpuPosition + "th on CPU usage");
+
+            // azuriraj browser tabove
+            if (tabTable != null && procInfo.hasTabs()) {
+                java.util.List<TabInfo> tabs = procInfo.getTabs();
+                lblTabsTitle.setText("Browser Tabs (" + tabs.size() + ")");
+                lblTabsTitle.setVisible(true);
+                lblTabsTitle.setManaged(true);
+                tabTable.setVisible(true);
+                tabTable.setManaged(true);
+                tabTable.setItems(FXCollections.observableArrayList(tabs));
+            } else if (tabTable != null) {
+                lblTabsTitle.setVisible(false);
+                lblTabsTitle.setManaged(false);
+                tabTable.setVisible(false);
+                tabTable.setManaged(false);
+            }
         } else {
             lblTime.setText("Total time - N/A");
             lblRamLabel.setText("RAM usage N/A");

@@ -29,6 +29,22 @@
       "category": "Fun"
     },
     {
+      "pattern": "github\\.com|gitlab\\.com|stackoverflow|stack overflow|bitbucket|leetcode|hackerrank|codepen|jsfiddle|replit|codesandbox|developer\\.mozilla|w3schools|geeksforgeeks|baeldung|docs\\.oracle|docs\\.google|medium\\.com.*programming|dev\\.to",
+      "category": "Work"
+    },
+    {
+      "pattern": "jira|confluence|linear\\.app|asana|basecamp|clickup|monday\\.com|todoist|google docs|google sheets|google slides|overleaf|sharepoint|onedrive|dropbox\\.com/s",
+      "category": "Work"
+    },
+    {
+      "pattern": "youtube|netflix|twitch|reddit|twitter|instagram|facebook|tiktok|9gag|imgur|pinterest|tumblr|snapchat|hulu|disney\\+|hbo|amazon prime|crunchyroll|funimation",
+      "category": "Fun"
+    },
+    {
+      "pattern": "steam|epic games|playstation|xbox|itch\\.io|gog\\.com|humble|gamejolt|newgrounds",
+      "category": "Fun"
+    },
+    {
       "pattern": "spotify|vlc|itunes|music|audacity|quicktime|stremio|popcorn",
       "category": "Fun"
     },

@@ -27,13 +27,18 @@ public class ProcessScanner {
     // Prethodni snapshot OSHI procesa — potreban za getProcessCpuLoadBetweenTicks
     private final ConcurrentHashMap<Integer, OSProcess> previousProcesses;
 
-    public ProcessScanner(ProcessRegistry registry, int chunkSize, long intervalMs) {
+    // servis za dohvatanje browser tabova (macOS AppleScript)
+    private final BrowserTabService browserTabService;
+
+    public ProcessScanner(ProcessRegistry registry, int chunkSize, long intervalMs,
+                          BrowserTabService browserTabService) {
         this.registry = registry;
         this.forkJoinPool = new ForkJoinPool();
         this.chunkSize = chunkSize;
         this.os = new SystemInfo().getOperatingSystem();
         this.oshiMetrics = new ConcurrentHashMap<>();
         this.previousProcesses = new ConcurrentHashMap<>();
+        this.browserTabService = browserTabService;
 
         this.scheduler = Executors.newSingleThreadScheduledExecutor(new java.util.concurrent.ThreadFactory() {
             @Override
@@ -114,7 +119,23 @@ public class ProcessScanner {
                 }
             }
 
-            // 6. Ukloni mrtve procese (memory cleanup)
+            // 6. Dohvati browser tabove (macOS AppleScript)
+            if (browserTabService != null) {
+                try {
+                    java.util.Map<String, java.util.List<TabInfo>> allTabs =
+                            browserTabService.getAllBrowserTabs(registry);
+                    for (java.util.Map.Entry<String, java.util.List<TabInfo>> entry : allTabs.entrySet()) {
+                        ProcessInfo pi = registry.get(entry.getKey());
+                        if (pi != null) {
+                            pi.setTabs(new java.util.ArrayList<>(entry.getValue()));
+                        }
+                    }
+                } catch (Exception e) {
+                    // greska pri dohvatanju tabova — ne blokira skeniranje
+                }
+            }
+
+            // 7. Ukloni mrtve procese (memory cleanup)
             registry.removeDeadProcesses();
 
         } catch (Exception e) {
