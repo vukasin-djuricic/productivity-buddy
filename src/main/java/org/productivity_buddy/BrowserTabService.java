@@ -98,6 +98,101 @@ public class BrowserTabService {
         return result;
     }
 
+    /**
+     * Vraca ime aplikacije koja je trenutno u fokusu (frontmost).
+     * Koristi System Events AppleScript. Null ako ne uspe.
+     */
+    public String getFrontmostAppName() {
+        try {
+            String script = "tell application \"System Events\" to return name of first application process whose frontmost is true";
+            ProcessBuilder pb = new ProcessBuilder("osascript", "-e", script);
+            pb.redirectErrorStream(true);
+            Process process = pb.start();
+            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            String result = reader.readLine();
+            process.waitFor();
+            if (result != null) {
+                return result.trim();
+            }
+        } catch (Exception e) {
+            // nema pristupa System Events
+        }
+        return null;
+    }
+
+    /**
+     * Dohvati aktivni (fokusirani) tab za dati browser.
+     * Vraca jedan TabInfo ili null ako ne uspe.
+     */
+    public TabInfo getActiveTabForBrowser(String processName) {
+        String appName = BROWSER_SCRIPTS.get(processName);
+        if (appName == null) return null;
+
+        try {
+            String script;
+            if ("Safari".equals(appName)) {
+                script = "tell application \"Safari\"\n"
+                        + "  set w to front window\n"
+                        + "  set t to current tab of w\n"
+                        + "  return name of t & \"|\" & URL of t\n"
+                        + "end tell";
+            } else {
+                script = "tell application \"" + appName + "\"\n"
+                        + "  set w to front window\n"
+                        + "  set t to active tab of w\n"
+                        + "  return title of t & \"|\" & URL of t\n"
+                        + "end tell";
+            }
+
+            ProcessBuilder pb = new ProcessBuilder("osascript", "-e", script);
+            pb.redirectErrorStream(true);
+            Process process = pb.start();
+            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            String line = reader.readLine();
+            process.waitFor();
+
+            if (line != null && !line.trim().isEmpty()) {
+                int sep = line.indexOf('|');
+                if (sep > 0) {
+                    String title = line.substring(0, sep).trim();
+                    String url = line.substring(sep + 1).trim();
+                    if (!title.isEmpty()) {
+                        TabInfo tab = new TabInfo(title, url);
+                        // kategorizuj
+                        ProcessCategory cat = categorizationService.categorize(title);
+                        if (cat == ProcessCategory.UNCATEGORIZED && !tab.getDomain().isEmpty()) {
+                            cat = categorizationService.categorize(tab.getDomain());
+                        }
+                        tab.setCategory(cat);
+                        return tab;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            // browser nema prozor ili nema dozvolu
+        }
+        return null;
+    }
+
+    /**
+     * Proveri da li je frontmost app ime odgovara nekom podrzanom browseru.
+     * Vraca process name kljuc iz BROWSER_SCRIPTS ili null.
+     */
+    public String matchFrontmostToBrowser(String frontmostApp) {
+        if (frontmostApp == null) return null;
+        // direktan match
+        if (BROWSER_SCRIPTS.containsKey(frontmostApp)) return frontmostApp;
+        // pokusaj parcijalan match (npr. "Google Chrome" vs "Google Chrome Helper")
+        for (String key : BROWSER_SCRIPTS.keySet()) {
+            if (frontmostApp.contains(key) || key.contains(frontmostApp)) return key;
+        }
+        return null;
+    }
+
+    public CategorizationService getCategorizationService() {
+        return categorizationService;
+    }
+
     // --- AppleScript generatori ---
 
     private String buildChromiumScript(String appName) {

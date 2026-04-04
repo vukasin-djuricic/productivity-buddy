@@ -20,6 +20,7 @@ import javafx.event.ActionEvent;
 import org.productivity_buddy.ProcessInfo;
 import org.productivity_buddy.ProcessRegistry;
 import org.productivity_buddy.ProductivityBuddy;
+import org.productivity_buddy.TabInfo;
 import org.productivity_buddy.workers.AnalyticsWorker;
 
 import java.util.ArrayList;
@@ -39,6 +40,10 @@ public class SpecificCategoryView implements RefreshableView {
     private PieChart top10Chart;
     private VBox top10ListContainer;
     private Label lblTotalTime;
+
+    // tabela browser tabova u ovoj kategoriji
+    private TableView<TabInfo> tabTable;
+    private Label lblTabsTitle;
 
     public SpecificCategoryView(ProcessRegistry registry, AnalyticsWorker analyticsWorker,
                                 ProductivityBuddy app, String categoryName) {
@@ -154,7 +159,46 @@ public class SpecificCategoryView implements RefreshableView {
         hint.getStyleClass().add("stat-rank");
         hint.setPadding(new Insets(4, 0, 0, 4));
 
-        leftBox.getChildren().addAll(tableLabel, table, hint);
+        // tabela browser tabova koji pripadaju ovoj kategoriji
+        lblTabsTitle = new Label("Browser Tabs in " + categoryName);
+        lblTabsTitle.getStyleClass().add("section-title");
+        lblTabsTitle.setVisible(false);
+        lblTabsTitle.setManaged(false);
+
+        tabTable = new TableView<>();
+        tabTable.setVisible(false);
+        tabTable.setManaged(false);
+        tabTable.setPrefHeight(160);
+        tabTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_ALL_COLUMNS);
+
+        TableColumn<TabInfo, String> colTabName = new TableColumn<>("Tab");
+        colTabName.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<TabInfo, String>, ObservableValue<String>>() {
+            @Override
+            public ObservableValue<String> call(TableColumn.CellDataFeatures<TabInfo, String> data) {
+                return new SimpleStringProperty(data.getValue().getTitle());
+            }
+        });
+
+        TableColumn<TabInfo, String> colTabDomain = new TableColumn<>("Domain");
+        colTabDomain.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<TabInfo, String>, ObservableValue<String>>() {
+            @Override
+            public ObservableValue<String> call(TableColumn.CellDataFeatures<TabInfo, String> data) {
+                return new SimpleStringProperty(data.getValue().getDomain());
+            }
+        });
+
+        TableColumn<TabInfo, String> colTabTime = new TableColumn<>("Time");
+        colTabTime.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<TabInfo, String>, ObservableValue<String>>() {
+            @Override
+            public ObservableValue<String> call(TableColumn.CellDataFeatures<TabInfo, String> data) {
+                long time = data.getValue().getEffectiveTotalTime();
+                return new SimpleStringProperty(time > 0 ? ProductivityBuddy.formatTime(time) : "-");
+            }
+        });
+
+        tabTable.getColumns().addAll(colTabName, colTabDomain, colTabTime);
+
+        leftBox.getChildren().addAll(tableLabel, table, hint, lblTabsTitle, tabTable);
 
         // Top 10 Pie Chart za kategoriju
         VBox rightBox = new VBox(12);
@@ -193,10 +237,48 @@ public class SpecificCategoryView implements RefreshableView {
         // filtriraj procese po kategoriji
         ObservableList<ProcessInfo> filtered = FXCollections.observableArrayList();
         long totalTime = 0;
+        // prikupi browser tabove koji pripadaju ovoj kategoriji
+        java.util.List<TabInfo> categoryTabs = new java.util.ArrayList<>();
+
         for (ProcessInfo info : registry.getAll()) {
             if (info.getCategory().equals(categoryName)) {
                 filtered.add(info);
                 totalTime += info.getEffectiveTotalTime();
+            }
+
+            // pretrazi tracked tabove svih procesa za ovu kategoriju
+            for (TabInfo tab : info.getTrackedTabs()) {
+                if (tab.getCategory().equals(categoryName)) {
+                    categoryTabs.add(tab);
+                    // dodaj tab vreme na total ako proces sam nije u ovoj kategoriji
+                    if (!info.getCategory().equals(categoryName)) {
+                        totalTime += tab.getEffectiveTotalTime();
+                    }
+                }
+            }
+        }
+
+        // azuriraj tabelu browser tabova
+        if (tabTable != null) {
+            if (!categoryTabs.isEmpty()) {
+                // sortiraj po vremenu opadajuce
+                categoryTabs.sort(new Comparator<TabInfo>() {
+                    @Override
+                    public int compare(TabInfo a, TabInfo b) {
+                        return Long.compare(b.getEffectiveTotalTime(), a.getEffectiveTotalTime());
+                    }
+                });
+                lblTabsTitle.setText("Browser Tabs in " + categoryName + " (" + categoryTabs.size() + ")");
+                lblTabsTitle.setVisible(true);
+                lblTabsTitle.setManaged(true);
+                tabTable.setVisible(true);
+                tabTable.setManaged(true);
+                tabTable.setItems(FXCollections.observableArrayList(categoryTabs));
+            } else {
+                lblTabsTitle.setVisible(false);
+                lblTabsTitle.setManaged(false);
+                tabTable.setVisible(false);
+                tabTable.setManaged(false);
             }
         }
 

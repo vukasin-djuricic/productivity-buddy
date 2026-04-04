@@ -1,6 +1,7 @@
 package org.productivity_buddy;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
@@ -47,12 +48,36 @@ public class FileService {
                         long totalTime = info.getTotalTime() + info.getSessionTime();
 
                         json.append("    {\n");
-                        json.append("      \"originalName\": \"").append(info.getOriginalName()).append("\",\n");
-                        json.append("      \"aliasName\": \"").append(info.getAliasName()).append("\",\n");
+                        json.append("      \"originalName\": \"").append(escapeJson(info.getOriginalName())).append("\",\n");
+                        json.append("      \"aliasName\": \"").append(escapeJson(info.getAliasName())).append("\",\n");
                         json.append("      \"category\": \"").append(info.getCategory()).append("\",\n");
                         json.append("      \"isTrackingFreezed\": ").append(info.isFrozen()).append(",\n");
-                        json.append("      \"totalTimeSeconds\": ").append(totalTime).append("\n");
-                        json.append("    }");
+                        json.append("      \"totalTimeSeconds\": ").append(totalTime);
+
+                        // sacuvaj tab vremena ako postoje
+                        java.util.Collection<TabInfo> trackedTabs = info.getTrackedTabs();
+                        if (!trackedTabs.isEmpty()) {
+                            json.append(",\n      \"tabTimes\": [\n");
+                            boolean firstTab = true;
+                            for (TabInfo tab : trackedTabs) {
+                                long tabTotal = tab.getTotalTime() + tab.getSessionTime();
+                                if (tabTotal <= 0) continue;
+                                if (!firstTab) {
+                                    json.append(",\n");
+                                }
+                                firstTab = false;
+                                json.append("        {\n");
+                                json.append("          \"domain\": \"").append(escapeJson(tab.getDomain())).append("\",\n");
+                                json.append("          \"title\": \"").append(escapeJson(tab.getTitle())).append("\",\n");
+                                json.append("          \"url\": \"").append(escapeJson(tab.getUrl())).append("\",\n");
+                                json.append("          \"category\": \"").append(tab.getCategory()).append("\",\n");
+                                json.append("          \"totalTimeSeconds\": ").append(tabTotal).append("\n");
+                                json.append("        }");
+                            }
+                            json.append("\n      ]");
+                        }
+
+                        json.append("\n    }");
                     }
 
                     json.append("\n  ]\n}");
@@ -89,19 +114,27 @@ public class FileService {
 
     // Parsira JSON i primenjuje na registry
     public void parseAndApplyJson(String content) {
-        String[] blocks = content.split("\\{");
+        // izvuci proces blokove pomocu dubine zagrada
+        java.util.List<String> processBlocks = extractProcessBlocks(content);
 
-        for (String block : blocks) {
+        for (String block : processBlocks) {
             if (!block.contains("originalName")) {
                 continue;
             }
 
-            String origName = extractStringValue(block, "originalName");
-            String alias = extractStringValue(block, "aliasName");
-            String category = extractStringValue(block, "category");
-            boolean frozen = block.contains("\"isTrackingFreezed\": true")
-                    || block.contains("\"isTrackingFreezed\":true");
-            long totalTime = extractLongValue(block, "totalTimeSeconds");
+            // razdvoji proces polja od tabTimes sekcije
+            String processFields = block;
+            int tabTimesIdx = block.indexOf("\"tabTimes\"");
+            if (tabTimesIdx >= 0) {
+                processFields = block.substring(0, tabTimesIdx);
+            }
+
+            String origName = extractStringValue(processFields, "originalName");
+            String alias = extractStringValue(processFields, "aliasName");
+            String category = extractStringValue(processFields, "category");
+            boolean frozen = processFields.contains("\"isTrackingFreezed\": true")
+                    || processFields.contains("\"isTrackingFreezed\":true");
+            long totalTime = extractLongValue(processFields, "totalTimeSeconds");
 
             if (origName != null) {
                 ProcessInfo info = registry.getOrCreate(origName);
@@ -113,6 +146,85 @@ public class FileService {
                 }
                 info.setFrozen(frozen);
                 info.setTotalTime(totalTime);
+
+                // parsiraj tab vremena ako postoje
+                if (tabTimesIdx >= 0) {
+                    parseTabTimes(block.substring(tabTimesIdx), info);
+                }
+            }
+        }
+    }
+
+    // izvuci blokove procesa iz "processes" niza pomocu dubine zagrada
+    private java.util.List<String> extractProcessBlocks(String content) {
+        java.util.List<String> blocks = new java.util.ArrayList<>();
+
+        // nadji pocetak "processes" niza
+        int arrStart = content.indexOf("[");
+        if (arrStart < 0) return blocks;
+
+        int depth = 0;
+        int blockStart = -1;
+        for (int i = arrStart; i < content.length(); i++) {
+            char c = content.charAt(i);
+            if (c == '{') {
+                if (depth == 0) {
+                    blockStart = i;
+                }
+                depth++;
+            } else if (c == '}') {
+                depth--;
+                if (depth == 0 && blockStart >= 0) {
+                    blocks.add(content.substring(blockStart, i + 1));
+                    blockStart = -1;
+                }
+            }
+        }
+
+        return blocks;
+    }
+
+    // parsiraj tabTimes niz unutar proces bloka
+    private void parseTabTimes(String tabSection, ProcessInfo info) {
+        // izvuci svaki tab objekat iz tabTimes niza
+        java.util.List<String> tabBlocks = new java.util.ArrayList<>();
+        int arrStart = tabSection.indexOf("[");
+        if (arrStart < 0) return;
+
+        int depth = 0;
+        int blockStart = -1;
+        for (int i = arrStart; i < tabSection.length(); i++) {
+            char c = tabSection.charAt(i);
+            if (c == '{') {
+                if (depth == 0) blockStart = i;
+                depth++;
+            } else if (c == '}') {
+                depth--;
+                if (depth == 0 && blockStart >= 0) {
+                    tabBlocks.add(tabSection.substring(blockStart, i + 1));
+                    blockStart = -1;
+                }
+            } else if (c == ']' && depth == 0) {
+                break; // kraj tabTimes niza
+            }
+        }
+
+        for (String tabBlock : tabBlocks) {
+            String domain = extractStringValue(tabBlock, "domain");
+            String title = extractStringValue(tabBlock, "title");
+            String url = extractStringValue(tabBlock, "url");
+            String tabCategory = extractStringValue(tabBlock, "category");
+            long tabTime = extractLongValue(tabBlock, "totalTimeSeconds");
+
+            if (domain != null && !domain.isEmpty()) {
+                TabInfo tracked = info.getOrCreateTabTime(
+                        domain,
+                        title != null ? title : domain,
+                        url != null ? url : "");
+                tracked.setTotalTime(tabTime);
+                if (tabCategory != null) {
+                    tracked.setCategory(ProcessCategory.fromDisplayName(tabCategory));
+                }
             }
         }
     }
@@ -193,6 +305,16 @@ public class FileService {
                 }
             }
         });
+    }
+
+    // escapuj specijalne JSON karaktere u stringovima
+    private String escapeJson(String value) {
+        if (value == null) return "";
+        return value.replace("\\", "\\\\")
+                .replace("\"", "\\\"")
+                .replace("\n", "\\n")
+                .replace("\r", "\\r")
+                .replace("\t", "\\t");
     }
 
     // SHUTDOWN — snimi stanje pa uredno ugasi

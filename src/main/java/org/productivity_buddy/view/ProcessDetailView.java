@@ -218,7 +218,16 @@ public class ProcessDetailView implements RefreshablePanel {
             }
         });
 
-        tabTable.getColumns().addAll(colTabTitle, colTabDomain, colTabCategory);
+        TableColumn<TabInfo, String> colTabTime = new TableColumn<>("Time");
+        colTabTime.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<TabInfo, String>, ObservableValue<String>>() {
+            @Override
+            public ObservableValue<String> call(TableColumn.CellDataFeatures<TabInfo, String> data) {
+                long time = data.getValue().getEffectiveTotalTime();
+                return new SimpleStringProperty(time > 0 ? ProductivityBuddy.formatTime(time) : "-");
+            }
+        });
+
+        tabTable.getColumns().addAll(colTabTitle, colTabDomain, colTabCategory, colTabTime);
         VBox.setVgrow(tabTable, Priority.ALWAYS);
 
         rightPane.getChildren().addAll(lblTabsTitle, tabTable);
@@ -249,20 +258,37 @@ public class ProcessDetailView implements RefreshablePanel {
             lblRamRank.setText(ramPosition + "th on RAM usage");
             lblCpuRank.setText(cpuPosition + "th on CPU usage");
 
-            // azuriraj browser tabove
-            if (tabTable != null && procInfo.hasTabs()) {
-                java.util.List<TabInfo> tabs = procInfo.getTabs();
-                lblTabsTitle.setText("Browser Tabs (" + tabs.size() + ")");
-                lblTabsTitle.setVisible(true);
-                lblTabsTitle.setManaged(true);
-                tabTable.setVisible(true);
-                tabTable.setManaged(true);
-                tabTable.setItems(FXCollections.observableArrayList(tabs));
-            } else if (tabTable != null) {
-                lblTabsTitle.setVisible(false);
-                lblTabsTitle.setManaged(false);
-                tabTable.setVisible(false);
-                tabTable.setManaged(false);
+            // azuriraj browser tabove — spoji transient tabove sa tracked (koji imaju vreme)
+            if (tabTable != null) {
+                // spoji tracked tabove (sa vremenom) i transient tabove (snapshot)
+                java.util.Map<String, TabInfo> merged = new java.util.LinkedHashMap<>();
+
+                // prvo dodaj tracked tabove (imaju akumulirano vreme)
+                for (TabInfo tracked : procInfo.getTrackedTabs()) {
+                    merged.put(tracked.getDomain(), tracked);
+                }
+
+                // dodaj transient tabove koji nisu vec u tracked mapi
+                for (TabInfo tab : procInfo.getTabs()) {
+                    if (!tab.getDomain().isEmpty() && !merged.containsKey(tab.getDomain())) {
+                        merged.put(tab.getDomain(), tab);
+                    }
+                }
+
+                if (!merged.isEmpty()) {
+                    java.util.List<TabInfo> tabList = new java.util.ArrayList<>(merged.values());
+                    lblTabsTitle.setText("Browser Tabs (" + tabList.size() + ")");
+                    lblTabsTitle.setVisible(true);
+                    lblTabsTitle.setManaged(true);
+                    tabTable.setVisible(true);
+                    tabTable.setManaged(true);
+                    tabTable.setItems(FXCollections.observableArrayList(tabList));
+                } else {
+                    lblTabsTitle.setVisible(false);
+                    lblTabsTitle.setManaged(false);
+                    tabTable.setVisible(false);
+                    tabTable.setManaged(false);
+                }
             }
         } else {
             lblTime.setText("Total time - N/A");

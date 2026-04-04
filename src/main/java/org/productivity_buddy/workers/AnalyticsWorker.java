@@ -3,6 +3,7 @@ package org.productivity_buddy.workers;
 import javafx.application.Platform;
 import org.productivity_buddy.ProcessInfo;
 import org.productivity_buddy.ProcessRegistry;
+import org.productivity_buddy.TabInfo;
 
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
@@ -61,21 +62,43 @@ public class AnalyticsWorker implements Runnable {
         Map<String, Long> processTime = new HashMap<>();
 
         for (ProcessInfo info : registry.getAll()) {
-            if("Uncategorized".equals(info.getCategory())) continue; // preskoci nekategorizovane procese
+            if ("Uncategorized".equals(info.getCategory())) continue;
 
-            long time = info.getEffectiveTotalTime();
-            String cat = info.getCategory();
+            // ako proces ima tab-level vreme, raspodeli po kategorijama tabova
+            if (!info.getTabTimeMap().isEmpty()) {
+                long tabTimeSum = 0;
+                for (TabInfo tab : info.getTrackedTabs()) {
+                    long tabTime = tab.getEffectiveTotalTime();
+                    if (tabTime <= 0) continue;
+                    tabTimeSum += tabTime;
 
-            // saberi vreme za kategoriju
-            Long existing = catTime.get(cat);
-            if (existing == null) {
-                catTime.put(cat, time);
+                    // tab kategorija za catTime agregaciju
+                    String tabCat = tab.getCategory();
+                    if ("Uncategorized".equals(tabCat)) tabCat = info.getCategory();
+                    Long existing = catTime.get(tabCat);
+                    catTime.put(tabCat, (existing == null) ? tabTime : existing + tabTime);
+
+                    // za top10 — svaki domen kao zaseban unos
+                    String key = info.getAliasName() + " \u2192 " + tab.getDomain();
+                    processTime.put(key, tabTime);
+                }
+
+                // preostalo vreme procesa koje nije pokriveno tabovima
+                long processTotal = info.getEffectiveTotalTime();
+                long uncoveredTime = processTotal - tabTimeSum;
+                if (uncoveredTime > 0) {
+                    String cat = info.getCategory();
+                    Long existing = catTime.get(cat);
+                    catTime.put(cat, (existing == null) ? uncoveredTime : existing + uncoveredTime);
+                }
             } else {
-                catTime.put(cat, existing + time);
+                // obicni procesi — postojeca logika
+                long time = info.getEffectiveTotalTime();
+                String cat = info.getCategory();
+                Long existing = catTime.get(cat);
+                catTime.put(cat, (existing == null) ? time : existing + time);
+                processTime.put(info.getOriginalName(), time);
             }
-
-            // sacuvaj vreme za proces (za Top 10)
-            processTime.put(info.getOriginalName(), time);
         }
 
         // 2. TOP 10 PROCESA PO UTROSENOM VREMENU

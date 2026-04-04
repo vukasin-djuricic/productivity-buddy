@@ -1,7 +1,9 @@
 package org.productivity_buddy;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
@@ -28,6 +30,9 @@ public class ProcessInfo {
 
     // browser tabovi — volatile lista, zamenjuje se atomicno (copy-on-write pristup)
     private volatile List<TabInfo> tabs = Collections.emptyList();
+
+    // trajno pracenje vremena po domenu — kljuc je domen (npr. "github.com")
+    private final ConcurrentHashMap<String, TabInfo> tabTimeMap = new ConcurrentHashMap<>();
 
 
     public ProcessInfo(String originalName) {
@@ -67,6 +72,8 @@ public class ProcessInfo {
     public boolean isAlive() { return active; }
     public List<TabInfo> getTabs() { return tabs; }
     public boolean hasTabs() { return !tabs.isEmpty(); }
+    public ConcurrentHashMap<String, TabInfo> getTabTimeMap() { return tabTimeMap; }
+    public Collection<TabInfo> getTrackedTabs() { return tabTimeMap.values(); }
 
 
     // --- SETTERI ---
@@ -98,4 +105,20 @@ public class ProcessInfo {
         return this.totalTime.get() + this.sessionTime.get();
     }
 
+    // dohvati ili kreiraj TabInfo za domen — atomicno
+    public TabInfo getOrCreateTabTime(final String domain, final String title, final String url) {
+        TabInfo existing = tabTimeMap.get(domain);
+        if (existing != null) return existing;
+        TabInfo newTab = new TabInfo(title, url);
+        TabInfo prev = tabTimeMap.putIfAbsent(domain, newTab);
+        return (prev != null) ? prev : newTab;
+    }
+
+    // resetuj session vreme za sve tabove
+    public void resetAllTabSessionTimes() {
+        for (TabInfo tab : tabTimeMap.values()) {
+            tab.setTotalTime(tab.getEffectiveTotalTime());
+            tab.resetSessionTime();
+        }
+    }
 }

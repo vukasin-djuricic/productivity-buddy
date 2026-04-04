@@ -27,6 +27,9 @@ public class ProcessScanner {
     // Prethodni snapshot OSHI procesa — potreban za getProcessCpuLoadBetweenTicks
     private final ConcurrentHashMap<Integer, OSProcess> previousProcesses;
 
+    // brojac ciklusa — full tab enumeration se radi svaki 5. ciklus
+    private int scanCycleCount = 0;
+
     // servis za dohvatanje browser tabova (macOS AppleScript)
     private final BrowserTabService browserTabService;
 
@@ -121,19 +124,47 @@ public class ProcessScanner {
                 }
             }
 
-            // 6. Dohvati browser tabove (macOS AppleScript)
+            // 6. Akumuliraj vreme za aktivni browser tab
             if (browserTabService != null) {
                 try {
-                    java.util.Map<String, java.util.List<TabInfo>> allTabs =
-                            browserTabService.getAllBrowserTabs(registry);
-                    for (java.util.Map.Entry<String, java.util.List<TabInfo>> entry : allTabs.entrySet()) {
-                        ProcessInfo pi = registry.get(entry.getKey());
-                        if (pi != null) {
-                            pi.setTabs(new java.util.ArrayList<>(entry.getValue()));
+                    String frontApp = browserTabService.getFrontmostAppName();
+                    String browserKey = browserTabService.matchFrontmostToBrowser(frontApp);
+                    if (browserKey != null) {
+                        ProcessInfo browserProcess = registry.get(browserKey);
+                        if (browserProcess != null && browserProcess.isAlive() && !browserProcess.isFrozen()) {
+                            TabInfo activeTab = browserTabService.getActiveTabForBrowser(browserKey);
+                            if (activeTab != null && !activeTab.getDomain().isEmpty()) {
+                                String domain = activeTab.getDomain();
+                                TabInfo tracked = browserProcess.getOrCreateTabTime(
+                                        domain, activeTab.getTitle(), activeTab.getUrl());
+                                tracked.setCategory(activeTab.getCategoryEnum());
+                                long lastUpdate = browserProcess.getLastUpdateTime();
+                                long elapsedSeconds = (now - lastUpdate) / 1000;
+                                if (elapsedSeconds > 0) {
+                                    tracked.addSessionTime(elapsedSeconds);
+                                }
+                            }
                         }
                     }
                 } catch (Exception e) {
-                    // greska pri dohvatanju tabova — ne blokira skeniranje
+                    // greska pri detekciji aktivnog taba — ne blokira skeniranje
+                }
+
+                // 6b. Full tab enumeration — svaki 5. ciklus (za prikaz svih tabova)
+                scanCycleCount++;
+                if (scanCycleCount % 5 == 0) {
+                    try {
+                        java.util.Map<String, java.util.List<TabInfo>> allTabs =
+                                browserTabService.getAllBrowserTabs(registry);
+                        for (java.util.Map.Entry<String, java.util.List<TabInfo>> entry : allTabs.entrySet()) {
+                            ProcessInfo pi = registry.get(entry.getKey());
+                            if (pi != null) {
+                                pi.setTabs(new java.util.ArrayList<>(entry.getValue()));
+                            }
+                        }
+                    } catch (Exception e) {
+                        // greska pri dohvatanju tabova
+                    }
                 }
             }
 
