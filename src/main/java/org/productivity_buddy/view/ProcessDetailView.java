@@ -195,6 +195,7 @@ public class ProcessDetailView implements RefreshablePanel {
         tabTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_ALL_COLUMNS);
 
         TableColumn<TabInfo, String> colTabTitle = new TableColumn<>("Tab");
+        colTabTitle.setMinWidth(120);
         colTabTitle.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<TabInfo, String>, ObservableValue<String>>() {
             @Override
             public ObservableValue<String> call(TableColumn.CellDataFeatures<TabInfo, String> data) {
@@ -203,6 +204,8 @@ public class ProcessDetailView implements RefreshablePanel {
         });
 
         TableColumn<TabInfo, String> colTabDomain = new TableColumn<>("Domain");
+        colTabDomain.setMinWidth(90);
+        colTabDomain.setPrefWidth(100);
         colTabDomain.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<TabInfo, String>, ObservableValue<String>>() {
             @Override
             public ObservableValue<String> call(TableColumn.CellDataFeatures<TabInfo, String> data) {
@@ -211,6 +214,8 @@ public class ProcessDetailView implements RefreshablePanel {
         });
 
         TableColumn<TabInfo, String> colTabCategory = new TableColumn<>("Category");
+        colTabCategory.setMinWidth(70);
+        colTabCategory.setPrefWidth(80);
         colTabCategory.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<TabInfo, String>, ObservableValue<String>>() {
             @Override
             public ObservableValue<String> call(TableColumn.CellDataFeatures<TabInfo, String> data) {
@@ -218,16 +223,18 @@ public class ProcessDetailView implements RefreshablePanel {
             }
         });
 
-        TableColumn<TabInfo, String> colTabTime = new TableColumn<>("Time");
+        /*TableColumn<TabInfo, String> colTabTime = new TableColumn<>("Time");
+        colTabTime.setMinWidth(60);
+        colTabTime.setPrefWidth(70);
         colTabTime.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<TabInfo, String>, ObservableValue<String>>() {
             @Override
             public ObservableValue<String> call(TableColumn.CellDataFeatures<TabInfo, String> data) {
                 long time = data.getValue().getEffectiveTotalTime();
                 return new SimpleStringProperty(time > 0 ? ProductivityBuddy.formatTime(time) : "-");
             }
-        });
+        });*/
 
-        tabTable.getColumns().addAll(colTabTitle, colTabDomain, colTabCategory, colTabTime);
+        tabTable.getColumns().addAll(colTabTitle, colTabDomain, colTabCategory);//, colTabTime);
         VBox.setVgrow(tabTable, Priority.ALWAYS);
 
         rightPane.getChildren().addAll(lblTabsTitle, tabTable);

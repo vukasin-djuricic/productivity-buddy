@@ -168,7 +168,7 @@ public class SpecificCategoryView implements RefreshableView {
         tabTable = new TableView<>();
         tabTable.setVisible(false);
         tabTable.setManaged(false);
-        tabTable.setPrefHeight(160);
+        tabTable.setPrefHeight(260);
         tabTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_ALL_COLUMNS);
 
         TableColumn<TabInfo, String> colTabName = new TableColumn<>("Tab");
