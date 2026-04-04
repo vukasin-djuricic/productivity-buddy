@@ -61,7 +61,7 @@ public class AnalyticsWorker implements Runnable {
         Map<String, Long> processTime = new HashMap<>();
 
         for (ProcessInfo info : registry.getAll()) {
-            if(info.getCategory() == "Uncategorized") continue; // preskoci nekategorizovane procese
+            if("Uncategorized".equals(info.getCategory())) continue; // preskoci nekategorizovane procese
 
             long time = info.getEffectiveTotalTime();
             String cat = info.getCategory();

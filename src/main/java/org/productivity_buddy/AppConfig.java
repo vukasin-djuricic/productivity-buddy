@@ -21,8 +21,7 @@ public class AppConfig {
         this.snapshotInterval = 60;
         this.fixedSnapshotTimes = new ArrayList<>();
 
-        try {
-            InputStream input = new FileInputStream(configPath);
+        try (InputStream input = new FileInputStream(configPath)){
             Properties props = new Properties();
             props.load(input);
             input.close();

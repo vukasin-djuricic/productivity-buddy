@@ -18,12 +18,7 @@ import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 import javafx.util.Callback;
 
-import org.productivity_buddy.view.MainChartView;
-import org.productivity_buddy.view.ProcessDetailView;
-import org.productivity_buddy.view.RefreshablePanel;
-import org.productivity_buddy.view.RefreshableView;
-import org.productivity_buddy.view.HelpView;
-import org.productivity_buddy.view.SpecificCategoryView;
+import org.productivity_buddy.view.*;
 import org.productivity_buddy.workers.AnalyticsWorker;
 import org.productivity_buddy.workers.FileWatcherWorker;
 
@@ -296,7 +291,7 @@ public class ProductivityBuddy extends Application {
 
     public void navigateToHelp() {
         showingFullScreenView = true;
-        HelpView view = new HelpView(this);
+        NewHelpView view = new NewHelpView(this);
         rootPane.setCenter(view.createView());
         currentFullScreenView = view;
         activeRightView = null;
