@@ -327,7 +327,7 @@ public class NewHelpView implements RefreshableView {
         stSequence.play();
 
         // anotacija za ScanTask
-        Label stAnnot = createAnnotation("fork()/compute() work-stealing", 68, 390);
+        Label stAnnot = createAnnotation("fork()/compute() work-stealing", 68, 400);
         stAnnot.setOpacity(0);
         canvas.getChildren().add(stAnnot);
         sceneElements.add(stAnnot);
@@ -411,13 +411,13 @@ public class NewHelpView implements RefreshableView {
         Group arrow2 = animateLineDrawing(510, 305, 530, 290, "#c084fc", 500, 700);
         sceneElements.add(arrow2);
 
-        Label lbl2 = createArrowLabel("categorize()", 512, 282, "#c084fc");
+        /*Label lbl2 = createArrowLabel("categorize()", 490, 312, "#c084fc");
         lbl2.setOpacity(0);
         canvas.getChildren().add(lbl2);
         sceneElements.add(lbl2);
         FadeTransition lbl2Fade = fadeIn(lbl2, 400, 1200);
         allAnimations.add(lbl2Fade);
-        lbl2Fade.play();
+        lbl2Fade.play();*/
 
         // anotacija
         Label catAnnot = createAnnotation("called inside computeIfAbsent()", 330, 340);
@@ -460,7 +460,7 @@ public class NewHelpView implements RefreshableView {
 
         // UI Views — slide sa desne strane, 200ms delay
         uiViewsBox = createBox("UI Views", "4 refreshable views", "#9ca3af",
-                1010, 260, 150, 80,
+                1060, 260, 150, 80,
                 "MainChartView, ProcessDetailView, SpecificCategoryView, HelpView. "
                         + "All implement RefreshableView and refresh via Platform.runLater().");
         uiViewsBox.setOpacity(0);
@@ -494,7 +494,7 @@ public class NewHelpView implements RefreshableView {
 
         // strelica: Analytics desno → UI Views levo
         // Analytics desno: 800+170=970, centar Y: 300 → UI Views levo: 1010, centar Y: 300
-        Group arrow2 = animateLineDrawing(970, 300, 1010, 300, "#10b981", 500, 800);
+        Group arrow2 = animateLineDrawing(970, 300, 1060, 300, "#10b981", 500, 800);
         sceneElements.add(arrow2);
         Label lbl2 = createArrowLabel("Platform.runLater()", 968, 282, "#10b981");
         lbl2.setOpacity(0);

@@ -50,6 +50,7 @@ public class ProductivityBuddy extends Application {
 
     // shared layout — tabela zivi kroz celu sesiju
     private TableView<ProcessInfo> sharedTable;
+    private TextField searchField;
     private VBox sharedLeftPane;
     private VBox dynamicRightPane;
     private HBox sharedLayout;
@@ -169,6 +170,11 @@ public class ProductivityBuddy extends Application {
         Label tableTitle = new Label("Active Processes");
         tableTitle.getStyleClass().add("section-title");
 
+        // search polje za filtriranje procesa
+        searchField = new TextField();
+        searchField.setPromptText("Search processes...");
+        searchField.getStyleClass().add("search-field");
+
         sharedTable = new TableView<>();
 
         TableColumn<ProcessInfo, String> colName = new TableColumn<>("Process");
@@ -214,7 +220,7 @@ public class ProductivityBuddy extends Application {
         hint.getStyleClass().add("stat-rank");
         hint.setPadding(new Insets(4, 0, 0, 4));
 
-        sharedLeftPane.getChildren().addAll(tableTitle, sharedTable, hint);
+        sharedLeftPane.getChildren().addAll(tableTitle, searchField, sharedTable, hint);
 
         // DESNA STRANA — dinamicni panel
         dynamicRightPane = new VBox(20);
@@ -241,15 +247,19 @@ public class ProductivityBuddy extends Application {
 
         List<TableColumn<ProcessInfo, ?>> sortOrder = new ArrayList<>(sharedTable.getSortOrder());
 
-        ObservableList<ProcessInfo> currentItems = sharedTable.getItems();
-        java.util.Collection<ProcessInfo> registryItems = registry.getAll();
-        boolean itemsReplaced = false;
-        if (currentItems.size() != registryItems.size()) {
-            sharedTable.setItems(FXCollections.observableArrayList(registryItems));
-            itemsReplaced = true;
-        } else {
-            sharedTable.refresh();
+        // filtriraj procese na osnovu search polja
+        String query = (searchField != null) ? searchField.getText().toLowerCase().trim() : "";
+        ObservableList<ProcessInfo> filtered = FXCollections.observableArrayList();
+        for (ProcessInfo info : registry.getAll()) {
+            if (query.isEmpty()
+                    || info.getAliasName().toLowerCase().contains(query)
+                    || info.getOriginalName().toLowerCase().contains(query)
+                    || info.getCategory().toLowerCase().contains(query)) {
+                filtered.add(info);
+            }
         }
+
+        sharedTable.setItems(filtered);
 
         if (!sortOrder.isEmpty()) {
             sharedTable.getSortOrder().setAll(sortOrder);
