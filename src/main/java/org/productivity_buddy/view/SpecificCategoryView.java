@@ -84,14 +84,47 @@ public class SpecificCategoryView implements RefreshableView {
             }
         });
 
-        TableColumn<ProcessInfo, String> colRamCpu = new TableColumn<>("RAM & CPU");
-        colRamCpu.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<ProcessInfo, String>, ObservableValue<String>>() {
+        TableColumn<ProcessInfo, ProcessInfo> colRamCpu = new TableColumn<>("RAM & CPU");
+
+        // 1. Dajemo koloni ceo objekat umesto Stringa
+        colRamCpu.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<ProcessInfo, ProcessInfo>, ObservableValue<ProcessInfo>>() {
             @Override
-            public ObservableValue<String> call(TableColumn.CellDataFeatures<ProcessInfo, String> data) {
-                ProcessInfo info = data.getValue();
-                String ram = ProductivityBuddy.formatRam(info.getRamUsageBytes());
-                String cpu = String.format("%.1f%%", info.getCpuUsage());
-                return new SimpleStringProperty(ram + " | " + cpu);
+            public ObservableValue<ProcessInfo> call(TableColumn.CellDataFeatures<ProcessInfo, ProcessInfo> data) {
+                return new javafx.beans.property.ReadOnlyObjectWrapper<>(data.getValue());
+            }
+        });
+
+        // 2. Formatiramo kako se objekat prikazuje (kao tekst)
+        colRamCpu.setCellFactory(new Callback<TableColumn<ProcessInfo, ProcessInfo>, TableCell<ProcessInfo, ProcessInfo>>() {
+            @Override
+            public TableCell<ProcessInfo, ProcessInfo> call(TableColumn<ProcessInfo, ProcessInfo> param) {
+                return new TableCell<ProcessInfo, ProcessInfo>() {
+                    @Override
+                    protected void updateItem(ProcessInfo info, boolean empty) {
+                        super.updateItem(info, empty);
+                        if (empty || info == null) {
+                            setText(null);
+                        } else {
+                            String ram = ProductivityBuddy.formatRam(info.getRamUsageBytes());
+                            String cpu = String.format("%.1f%%", info.getCpuUsage());
+                            setText(ram + " | " + cpu);
+                        }
+                    }
+                };
+            }
+        });
+
+        // 3. Učimo JavaFX kako da numerički uporedi dva procesa
+        colRamCpu.setComparator(new java.util.Comparator<ProcessInfo>() {
+            @Override
+            public int compare(ProcessInfo p1, ProcessInfo p2) {
+                // Prvo sortiramo po RAM-u
+                int ramCompare = Long.compare(p1.getRamUsageBytes(), p2.getRamUsageBytes());
+                if (ramCompare != 0) {
+                    return ramCompare;
+                }
+                // Ako je RAM isti (retko), sortiramo po CPU-u
+                return Double.compare(p1.getCpuUsage(), p2.getCpuUsage());
             }
         });
 
