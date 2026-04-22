@@ -80,6 +80,26 @@ Key design notes:
 - **macOS** for full functionality — browser-tab tracking relies on AppleScript. The rest of the app (process scanning, categorization, persistence) runs on Linux and Windows.
 - On macOS, the first tab-enumeration attempt triggers a macOS *Automation* permission prompt per browser. Grant it once in *System Settings → Privacy & Security → Automation*.
 
+## Install (macOS, Apple Silicon)
+
+The easiest path is via Homebrew. The build is unsigned (no Apple Developer ID), so installing the `.dmg` directly would trigger a Gatekeeper "unverified developer" warning. Homebrew installs handle this automatically.
+
+```bash
+brew install --cask vukasin-djuricic/tap/productivity-buddy
+```
+
+That's it — `open -a "ProductivityBuddy"` and it runs.
+
+### Or download the DMG directly
+
+Grab the latest `.dmg` from [Releases](https://github.com/vukasin-djuricic/productivity-buddy/releases), drag the app to Applications, then clear the Gatekeeper quarantine flag once:
+
+```bash
+xattr -dr com.apple.quarantine /Applications/ProductivityBuddy.app
+```
+
+(Or right-click the app → **Open** → **Open Anyway** the first time.)
+
 ## Build & run
 
 ```bash
