@@ -7,7 +7,7 @@ plugins {
 }
 
 group 'org.uma_gym'
-version '1.0.0'
+version '1.0.1'
 
 repositories {
     mavenCentral()
@@ -65,4 +65,43 @@ jlink {
 
 jlinkZip {
     group = 'distribution'
+}
+
+// Post-processes the DMG produced by jpackage to add an "Applications" folder
+// shortcut inside the mounted volume. jpackage's built-in DMGsetup.scpt tries
+// to do this via Finder AppleScript automation, which often fails silently on
+// modern macOS (requires Finder Automation permissions). This task builds a
+// fresh DMG from a staging directory that explicitly includes the symlink, so
+// users get the standard drag-to-Applications install UX.
+tasks.register('packageDmg', Exec) {
+    dependsOn 'jpackage'
+    group = 'distribution'
+    description = 'Rebuilds the jpackage DMG with an Applications folder symlink for drag-to-install UX'
+
+    def appName = 'ProductivityBuddy'
+    def ver = project.version
+    def dmgFile = project.file("${buildDir}/jpackage/${appName}-${ver}.dmg")
+
+    inputs.file(dmgFile)
+    outputs.file(dmgFile)
+
+    commandLine 'bash', '-c', """
+        set -e
+        DMG='${dmgFile}'
+        STAGE=\$(mktemp -d -t pb-dmg-stage)
+        MOUNT=\$(mktemp -d -t pb-dmg-mount)
+        trap 'hdiutil detach "\$MOUNT" >/dev/null 2>&1 || true; rm -rf "\$STAGE" "\$MOUNT"' EXIT
+
+        hdiutil attach "\$DMG" -nobrowse -noautoopen -readonly -mountpoint "\$MOUNT" >/dev/null
+        # Copy contents (the read-only .VolumeIcon.icns trips cp's exit code; ignore it)
+        cp -R "\$MOUNT"/ "\$STAGE"/ 2>/dev/null || true
+        ln -sf /Applications "\$STAGE/Applications"
+        hdiutil detach "\$MOUNT" >/dev/null
+
+        rm -f "\$DMG"
+        hdiutil create -volname '${appName}' -srcfolder "\$STAGE" -fs HFS+ \\
+            -format UDZO -imagekey zlib-level=9 "\$DMG" >/dev/null
+
+        echo "packageDmg: wrote \$DMG"
+    """
 }
