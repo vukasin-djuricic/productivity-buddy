@@ -50,8 +50,8 @@ public class AppDirs {
         try {
             Files.createDirectories(BASE.resolve("config"));
             Files.createDirectories(BASE.resolve("data"));
-            copyDefaultIfAbsent("defaults/config.properties", "config/config.properties");
-            copyDefaultIfAbsent("defaults/categorization_rules.json", "config/categorization_rules.json");
+            copyDefaultIfAbsent("/org/productivity_buddy/defaults/config.properties", "config/config.properties");
+            copyDefaultIfAbsent("/org/productivity_buddy/defaults/categorization_rules.json", "config/categorization_rules.json");
         } catch (IOException e) {
             System.err.println("AppDirs: greška pri kreiranju direktorijuma: " + e.getMessage());
         }
@@ -63,8 +63,8 @@ public class AppDirs {
             Files.createDirectories(BASE.resolve("config"));
             Files.createDirectories(BASE.resolve("data"));
 
-            copyDefaultIfAbsent("defaults/config.properties", "config/config.properties");
-            copyDefaultIfAbsent("defaults/categorization_rules.json", "config/categorization_rules.json");
+            copyDefaultIfAbsent("/org/productivity_buddy/defaults/config.properties", "config/config.properties");
+            copyDefaultIfAbsent("/org/productivity_buddy/defaults/categorization_rules.json", "config/categorization_rules.json");
         } catch (IOException e) {
             System.err.println("AppDirs: greška pri inicijalizaciji direktorijuma: " + e.getMessage());
         }
@@ -75,7 +75,7 @@ public class AppDirs {
         Path dest = BASE.resolve(relativeDest);
         if (Files.exists(dest)) return;
 
-        try (InputStream in = AppDirs.class.getClassLoader().getResourceAsStream(resourcePath)) {
+        try (InputStream in = AppDirs.class.getResourceAsStream(resourcePath)) {
             if (in == null) {
                 System.err.println("AppDirs: default resurs nije pronadjen: " + resourcePath);
                 return;
