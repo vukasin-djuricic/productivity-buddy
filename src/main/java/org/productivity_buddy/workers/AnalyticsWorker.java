@@ -62,10 +62,14 @@ public class AnalyticsWorker implements Runnable {
         Map<String, Long> processTime = new HashMap<>();
 
         for (ProcessInfo info : registry.getAll()) {
-            if ("Uncategorized".equals(info.getCategory())) continue;
+            // preskoci samo ako je i proces Uncategorized I nema tabove
+            // (browseri su cesto Uncategorized ali im tabovi imaju kategorije)
+            boolean processUncategorized = "Uncategorized".equals(info.getCategory());
+            boolean hasTabs = !info.getTabTimeMap().isEmpty();
+            if (processUncategorized && !hasTabs) continue;
 
             // ako proces ima tab-level vreme, raspodeli po kategorijama tabova
-            if (!info.getTabTimeMap().isEmpty()) {
+            if (hasTabs) {
                 long tabTimeSum = 0;
                 for (TabInfo tab : info.getTrackedTabs()) {
                     long tabTime = tab.getEffectiveTotalTime();

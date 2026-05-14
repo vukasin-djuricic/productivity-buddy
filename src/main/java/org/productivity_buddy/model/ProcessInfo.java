@@ -23,6 +23,8 @@ public class ProcessInfo {
     private final AtomicLong sessionTime;
 
     private volatile long lastUpdateTime;
+    // poseban tajmer za akumulaciju vremena aktivnog taba — nezavisan od lastUpdateTime
+    private volatile long lastTabUpdateTime;
     private volatile double cpuUsage;
     private volatile long ramUsageBytes;
 
@@ -45,6 +47,7 @@ public class ProcessInfo {
         this.totalTime = new AtomicLong(0);
         this.sessionTime = new AtomicLong(0);
         this.lastUpdateTime = System.currentTimeMillis();
+        this.lastTabUpdateTime = System.currentTimeMillis();
         this.cpuUsage = 0.0;
         this.ramUsageBytes = 0;
         this.active = false;
@@ -67,6 +70,7 @@ public class ProcessInfo {
     public long getTotalTime() { return totalTime.get(); }
     public long getSessionTime() { return sessionTime.get(); }
     public long getLastUpdateTime() { return lastUpdateTime; }
+    public long getLastTabUpdateTime() { return lastTabUpdateTime; }
     public double getCpuUsage() { return cpuUsage; }
     public long getRamUsageBytes() { return ramUsageBytes; }
     public boolean isAlive() { return active; }
@@ -88,6 +92,7 @@ public class ProcessInfo {
     public void setRamUsageBytes(long ram) { this.ramUsageBytes = ram; }
     public void setActive(boolean alive) { this.active = alive; }
     public void setLastUpdateTime(long t) { this.lastUpdateTime = t; }
+    public void setLastTabUpdateTime(long t) { this.lastTabUpdateTime = t; }
     public void setTabs(List<TabInfo> tabs) { this.tabs = Collections.unmodifiableList(tabs); }
 
     public void addSessionTime(long delta)

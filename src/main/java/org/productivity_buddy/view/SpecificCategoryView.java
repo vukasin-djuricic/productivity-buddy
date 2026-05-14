@@ -285,6 +285,7 @@ public class SpecificCategoryView implements RefreshableView {
                 tabTable.setVisible(true);
                 tabTable.setManaged(true);
                 tabTable.setItems(FXCollections.observableArrayList(categoryTabs));
+                tabTable.refresh();
             } else {
                 lblTabsTitle.setVisible(false);
                 lblTabsTitle.setManaged(false);
@@ -310,33 +311,39 @@ public class SpecificCategoryView implements RefreshableView {
                     + ProductivityBuddy.formatTime(totalTime));
         }
 
-        // azuriraj top 10 pie chart
-        // azuriraj top 10 listu sa vizuelnim trakama
+        // azuriraj top 10 listu sa vizuelnim trakama (procesi + tabovi te kategorije)
         if (top10ListContainer != null) {
             top10ListContainer.getChildren().clear();
 
-            // sortiraj po vremenu
-            List<ProcessInfo> sorted = new ArrayList<>(filtered);
-            sorted.sort(new Comparator<ProcessInfo>() {
-                @Override
-                public int compare(ProcessInfo a, ProcessInfo b) {
-                    return Long.compare(b.getEffectiveTotalTime(), a.getEffectiveTotalTime());
-                }
-            });
-            if (sorted.size() > 10) {
-                sorted = sorted.subList(0, 10);
+            // spoj procese i tabove u zajednicku listu (ime, vreme)
+            List<Map.Entry<String, Long>> combined = new ArrayList<>();
+            for (ProcessInfo p : filtered) {
+                combined.add(new java.util.AbstractMap.SimpleEntry<>(
+                        p.getAliasName(), p.getEffectiveTotalTime()));
+            }
+            for (TabInfo tab : categoryTabs) {
+                long t = tab.getEffectiveTotalTime();
+                if (t <= 0) continue;
+                String label = tab.getDomain();
+                combined.add(new java.util.AbstractMap.SimpleEntry<>(label, t));
             }
 
-            // Nadji maksimalno vreme kako bi najveci proces imao punu traku (100%)
-            long maxTime = sorted.isEmpty() ? 0 : sorted.get(0).getEffectiveTotalTime();
+            combined.sort(new Comparator<Map.Entry<String, Long>>() {
+                @Override
+                public int compare(Map.Entry<String, Long> a, Map.Entry<String, Long> b) {
+                    return Long.compare(b.getValue(), a.getValue());
+                }
+            });
+            if (combined.size() > 10) {
+                combined = combined.subList(0, 10);
+            }
 
-            // Kreiraj red za svaki od top 10 procesa
-            for (int i = 0; i < sorted.size(); i++) {
-                ProcessInfo p = sorted.get(i);
-                long time = p.getEffectiveTotalTime();
-                double fillPercentage = (maxTime > 0) ? (double) time / maxTime : 0.0;
+            long maxTime = combined.isEmpty() ? 0 : combined.get(0).getValue();
 
-                VBox row = createTop10Row(i + 1, p.getAliasName(), time, fillPercentage);
+            for (int i = 0; i < combined.size(); i++) {
+                Map.Entry<String, Long> e = combined.get(i);
+                double fillPercentage = (maxTime > 0) ? (double) e.getValue() / maxTime : 0.0;
+                VBox row = createTop10Row(i + 1, e.getKey(), e.getValue(), fillPercentage);
                 top10ListContainer.getChildren().add(row);
             }
         }

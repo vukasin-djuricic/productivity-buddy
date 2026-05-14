@@ -142,10 +142,12 @@ public class ProcessScanner {
                                 TabInfo tracked = browserProcess.getOrCreateTabTime(
                                         domain, activeTab.getTitle(), activeTab.getUrl());
                                 tracked.setCategory(activeTab.getCategoryEnum());
-                                long lastUpdate = browserProcess.getLastUpdateTime();
-                                long elapsedSeconds = (now - lastUpdate) / 1000;
+                                // koristi NEZAVISAN tab tajmer — lastUpdateTime je vec resetovan u koraku 5
+                                long lastTabUpdate = browserProcess.getLastTabUpdateTime();
+                                long elapsedSeconds = (now - lastTabUpdate) / 1000;
                                 if (elapsedSeconds > 0) {
                                     tracked.addSessionTime(elapsedSeconds);
+                                    browserProcess.setLastTabUpdateTime(now);
                                 }
                             }
                         }

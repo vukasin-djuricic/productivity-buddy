@@ -226,7 +226,14 @@ public class BrowserTabService {
     }
 
     // --- Izvrsavanje AppleScript-a ---
-
+/*
+  1. Java forkuje novi proces (ProcessBuilder.start()) — skupo.
+  2. macOS pokreće osascript izvršilac.
+  3. AppleScript se kompajlira.
+  4. AppleScript šalje Apple Event Chrome procesu.
+  5. Chrome čeka da završi šta radi, pa odgovori sa listom tabova.
+  6. Java čita stdout i parsira.
+ */
     private List<TabInfo> executeAppleScript(String script) {
         List<TabInfo> tabs = new ArrayList<>();
         try {
