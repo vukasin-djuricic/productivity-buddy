@@ -82,8 +82,21 @@ public class ProductivityBuddy extends Application {
 
         // 2.5 Kreiraj servis za auto-kategorizaciju (rule-based regex matching)
         categorizationService = new CategorizationService(AppDirs.resolve("config/categorization_rules.json"));
+        categorizationService.setRegistry(registry);
         categorizationService.loadRules();
         registry.setCategorizationService(categorizationService);
+        // okini UI refresh posle hot-reload-a pravila
+        categorizationService.setOnRulesReloaded(new Runnable() {
+            @Override
+            public void run() {
+                javafx.application.Platform.runLater(new Runnable() {
+                    @Override
+                    public void run() {
+                        refreshUI();
+                    }
+                });
+            }
+        });
 
         // 3. Kreiraj file service i ucitaj prethodno stanje
         // (JSON kategorije imaju prioritet nad auto-pravilima)

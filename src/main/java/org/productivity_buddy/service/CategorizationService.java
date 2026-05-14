@@ -1,6 +1,9 @@
 package org.productivity_buddy.service;
 
 import org.productivity_buddy.model.ProcessCategory;
+import org.productivity_buddy.model.ProcessInfo;
+import org.productivity_buddy.model.ProcessRegistry;
+import org.productivity_buddy.model.TabInfo;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -14,10 +17,22 @@ public class CategorizationService {
 
     private final String rulesFilePath;
     private volatile List<CompiledRule> rules;
+    private volatile ProcessRegistry registry;
+    private volatile Runnable onRulesReloaded;
 
     public CategorizationService(String rulesFilePath) {
         this.rulesFilePath = rulesFilePath;
         this.rules = Collections.emptyList();
+    }
+
+    // postavlja referencu na registry da bi reloadRules mogao da re-kategorise postojece podatke
+    public void setRegistry(ProcessRegistry registry) {
+        this.registry = registry;
+    }
+
+    // callback koji se okida posle reload-a (npr. za UI refresh)
+    public void setOnRulesReloaded(Runnable callback) {
+        this.onRulesReloaded = callback;
     }
 
     // ucitaj pravila iz JSON fajla
@@ -43,9 +58,41 @@ public class CategorizationService {
         return ProcessCategory.UNCATEGORIZED;
     }
 
-    // ponovo ucitaj pravila (poziva se pri hot-reload)
+    // ponovo ucitaj pravila i re-kategorise sve procese i tabove u registry-ju
     public void reloadRules() {
         loadRules();
+        recategorizeAll();
+        if (onRulesReloaded != null) {
+            onRulesReloaded.run();
+        }
+    }
+
+    // prodji kroz sve procese i tabove pa primeni nova pravila
+    private void recategorizeAll() {
+        if (registry == null) return;
+        for (ProcessInfo info : registry.getAll()) {
+            // re-kategorise proces
+            ProcessCategory procCat = categorize(info.getOriginalName());
+            info.setCategory(procCat);
+
+            // re-kategorise sve trajno pracene tabove (tabTimeMap)
+            for (TabInfo tab : info.getTrackedTabs()) {
+                ProcessCategory tabCat = categorize(tab.getTitle());
+                if (tabCat == ProcessCategory.UNCATEGORIZED && !tab.getDomain().isEmpty()) {
+                    tabCat = categorize(tab.getDomain());
+                }
+                tab.setCategory(tabCat);
+            }
+
+            // re-kategorise i transient tab listu (info.tabs)
+            for (TabInfo tab : info.getTabs()) {
+                ProcessCategory tabCat = categorize(tab.getTitle());
+                if (tabCat == ProcessCategory.UNCATEGORIZED && !tab.getDomain().isEmpty()) {
+                    tabCat = categorize(tab.getDomain());
+                }
+                tab.setCategory(tabCat);
+            }
+        }
     }
 
     public String getRulesFilePath() {
